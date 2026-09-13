@@ -95,6 +95,15 @@ export interface ArchiveItem {
   rights: string;
   provenance: string;
   pageCount?: number;
+  /** Primary media type for multimodal evidence rendering */
+  mediaType?: "image" | "audio" | "video";
+  caption?: string;
+  country?: string;
+  state?: string;
+  city?: string;
+  decade?: number;
+  hasAudioDescription?: boolean;
+  hasCaptions?: boolean;
 }
 
 export interface GraphNode {
@@ -128,7 +137,43 @@ export interface SearchFilters {
   eventId?: string;
   topicId?: string;
   placeId?: string;
+  // Extended Knowledge Garden filters
+  yearFrom?: number;
+  yearTo?: number;
+  country?: string;
+  state?: string;
+  city?: string;
+  decade?: string;
+  todayInHistory?: boolean;
+  historicalPeriod?: string;
+  mediaType?: "image" | "audio" | "video";
+  hasAudioDescription?: boolean;
+  hasCaptions?: boolean;
+  keywords?: string;
+  theme?: string;
 }
+
+export interface FilterObject {
+  contentTypes: string[];
+  languages: string[];
+  yearFrom: string;
+  yearTo: string;
+  decade: string;
+  historicalPeriod: string;
+  todayInHistory: boolean;
+  country: string;
+  state: string;
+  city: string;
+  topicIds: string[];
+  personIds: string[];
+  keywords: string;
+  theme: string;
+  hasAudioDescription: boolean;
+  hasCaptions: boolean;
+  highContrast: boolean;
+}
+
+export type SortOption = "relevance" | "date-asc" | "date-desc" | "title-asc";
 
 export interface SearchResults {
   documents: ArchiveItem[];

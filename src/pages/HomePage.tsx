@@ -2,7 +2,20 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
-import { Search, ArrowRight, FileText, Users, Calendar, Tag, MapPin, Network, Clock, MessageSquare } from "lucide-react";
+import {
+  Sprout,
+  ArrowRight,
+  FileText,
+  Users,
+  Calendar,
+  Tag,
+  MapPin,
+  Network,
+  Clock,
+  MessageSquare,
+  Send,
+  Sparkles,
+} from "lucide-react";
 import { getFeaturedDocuments, getFeaturedEvents, getAllTopics } from "@/services/api";
 import type { ContentType } from "@/types/archive";
 
@@ -19,26 +32,27 @@ const CONTENT_TYPE_LABELS: Record<ContentType, string> = {
   telegram: "Telegram",
 };
 
-const EVENT_TYPE_COLORS: Record<string, string> = {
-  life: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300",
-  political: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
-  legal: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
-  publication: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300",
-  constitutional: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
-};
-
 const EXPLORE_SECTIONS = [
-  { key: "documents", to: "/search?type=documents", icon: FileText, label: "Documents", count: "312" },
+  { key: "documents", to: "/garden", icon: FileText, label: "Documents", count: "312" },
   { key: "people", to: "/people", icon: Users, label: "People", count: "48" },
   { key: "events", to: "/events", icon: Calendar, label: "Events", count: "156" },
   { key: "topics", to: "/topics", icon: Tag, label: "Topics", count: "24" },
-  { key: "places", to: "/places", icon: MapPin, label: "Places", count: "38" },
+  { key: "places", to: "/garden", icon: MapPin, label: "Places", count: "38" },
+];
+
+// Quick-ask example questions for the home page RAG bar
+const QUICK_QUESTIONS = [
+  "Annihilation of Caste",
+  "Poona Pact",
+  "Constitution Speech",
+  "Mahad Satyagraha",
 ];
 
 export default function HomePage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState("");
+  const [browseQuery, setBrowseQuery] = useState("");
+  const [askQuery, setAskQuery] = useState("");
 
   const { data: documents } = useQuery({
     queryKey: ["featured-documents"],
@@ -55,10 +69,20 @@ export default function HomePage() {
     queryFn: getAllTopics,
   });
 
-  const handleSearch = (e: React.FormEvent) => {
+  // Browse the archive → Knowledge Garden
+  const handleBrowse = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
+    const dest = browseQuery.trim()
+      ? `/garden?q=${encodeURIComponent(browseQuery)}`
+      : "/garden";
+    navigate(dest);
+  };
+
+  // Ask the Archive → RAG Chatbot
+  const handleAsk = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (askQuery.trim()) {
+      navigate(`/ask?q=${encodeURIComponent(askQuery)}`);
     }
   };
 
@@ -95,34 +119,57 @@ export default function HomePage() {
               {t("home.hero_title")}
             </h1>
 
-            <p className="text-lg text-[var(--muted-foreground)] leading-relaxed mb-10 max-w-2xl">
+            <p className="text-lg text-[var(--muted-foreground)] leading-relaxed mb-8 max-w-2xl">
               {t("home.hero_subtitle")}
             </p>
 
-            {/* Search */}
-            <form onSubmit={handleSearch} className="relative max-w-xl">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--muted-foreground)]" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={t("home.search_placeholder")}
-                className="w-full pl-11 pr-32 py-3.5 bg-[var(--card)] border border-[var(--border)] rounded-sm text-sm placeholder:text-[var(--muted-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--ring)] transition-all"
-              />
-              <button
-                type="submit"
-                className="absolute right-2 top-1/2 -translate-y-1/2 px-4 py-1.5 bg-[var(--primary)] text-[var(--primary-foreground)] text-sm font-medium rounded-sm hover:opacity-90 transition-opacity"
-              >
-                Search
-              </button>
-            </form>
+            {/* Dual entry: Browse + Ask */}
+            <div className="space-y-3 max-w-xl">
+              {/* Browse the archive */}
+              <form onSubmit={handleBrowse} className="relative">
+                <Sprout className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--muted-foreground)]" />
+                <input
+                  type="text"
+                  value={browseQuery}
+                  onChange={(e) => setBrowseQuery(e.target.value)}
+                  placeholder="Browse documents, speeches, letters, events…"
+                  className="w-full pl-11 pr-36 py-3.5 bg-[var(--card)] border border-[var(--border)] rounded-sm text-sm placeholder:text-[var(--muted-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--ring)] transition-all"
+                />
+                <button
+                  type="submit"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 px-4 py-1.5 bg-[var(--primary)] text-[var(--primary-foreground)] text-sm font-medium rounded-sm hover:opacity-90 transition-opacity"
+                >
+                  Explore
+                </button>
+              </form>
+
+              {/* Ask the Archive */}
+              <form onSubmit={handleAsk} className="relative">
+                <Sparkles className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--primary)]" />
+                <input
+                  type="text"
+                  value={askQuery}
+                  onChange={(e) => setAskQuery(e.target.value)}
+                  placeholder="Ask the Archive a question…"
+                  className="w-full pl-11 pr-36 py-3.5 bg-[var(--primary)]/5 border border-[var(--primary)]/30 rounded-sm text-sm placeholder:text-[var(--muted-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--ring)] transition-all"
+                />
+                <button
+                  type="submit"
+                  disabled={!askQuery.trim()}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-[var(--primary)] text-[var(--primary-foreground)] text-sm font-medium rounded-sm hover:opacity-90 transition-opacity disabled:opacity-40 flex items-center gap-1.5"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  Ask
+                </button>
+              </form>
+            </div>
 
             {/* Quick links */}
             <div className="mt-4 flex flex-wrap gap-2">
-              {["Annihilation of Caste", "Poona Pact", "Constitution Speech", "Mahad Satyagraha"].map((term) => (
+              {QUICK_QUESTIONS.map((term) => (
                 <button
                   key={term}
-                  onClick={() => navigate(`/search?q=${encodeURIComponent(term)}`)}
+                  onClick={() => navigate(`/garden?q=${encodeURIComponent(term)}`)}
                   className="text-xs px-3 py-1.5 bg-[var(--muted)] hover:bg-[var(--border)] text-[var(--muted-foreground)] rounded-sm transition-colors"
                 >
                   {term}
@@ -170,7 +217,7 @@ export default function HomePage() {
               <p className="text-sm text-[var(--muted-foreground)] mt-1">Primary sources from the archival collection</p>
             </div>
             <Link
-              to="/search"
+              to="/garden"
               className="text-sm text-[var(--primary)] hover:underline flex items-center gap-1"
             >
               {t("common.view_all")} <ArrowRight className="w-3.5 h-3.5" />
@@ -291,7 +338,7 @@ export default function HomePage() {
             {(topics ?? []).map((topic) => (
               <Link
                 key={topic.id}
-                to={`/search?topic=${topic.id}`}
+                to={`/garden`}
                 className="group border border-[var(--border)] rounded-sm p-5 hover:border-[var(--primary)]/50 hover:bg-[var(--card)] transition-all flex items-center gap-4"
               >
                 <div
@@ -332,7 +379,7 @@ export default function HomePage() {
             </Link>
 
             <Link
-              to="/explorer"
+              to="/knowledge-explorer"
               className="group p-6 border border-[var(--border)] rounded-sm hover:border-[var(--primary)]/50 hover:bg-[var(--card)] transition-all"
             >
               <Network className="w-6 h-6 text-[var(--primary)] mb-4" />

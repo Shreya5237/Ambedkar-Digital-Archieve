@@ -1,13 +1,12 @@
-import { useState } from 'react'
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import "@/i18n";
 
 import Layout from "@/components/layout/layout";
 import HomePage from "@/pages/HomePage";
-import SearchPage from "@/pages/SearchPage";
 import DocumentPage from "@/pages/DocumentPage";
 import KnowledgeExplorer from "@/pages/KnowledgeExplorer";
+import KnowledgeGardenPage from "@/pages/KnowledgeGardenPage";
 import TimelinePage from "@/pages/TimelinePage";
 import AskPage from "@/pages/AskPage";
 import { PeopleListPage, PersonDetailPage } from "@/pages/PeoplePage";
@@ -28,10 +27,12 @@ export default function App() {
         <Routes>
           <Route element={<Layout />}>
             <Route path="/" element={<HomePage />} />
-            <Route path="/search" element={<SearchPage />} />
+            {/* /search redirects to Knowledge Garden for backward compatibility */}
+            <Route path="/search" element={<Navigate to="/garden" replace />} />
             <Route path="/documents/:id" element={<DocumentPage />} />
             <Route path="/timeline" element={<TimelinePage />} />
-            <Route path="/explorer" element={<KnowledgeExplorer />} />
+            <Route path="/garden" element={<KnowledgeGardenPage />} />
+            <Route path="/knowledge-explorer" element={<KnowledgeExplorer />} />
             <Route path="/ask" element={<AskPage />} />
             <Route path="/people" element={<PeopleListPage />} />
             <Route path="/people/:id" element={<PersonDetailPage />} />

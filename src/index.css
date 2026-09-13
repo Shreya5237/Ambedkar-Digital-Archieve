@@ -138,3 +138,110 @@ body {
 .react-flow__attribution {
   display: none;
 }
+
+/* ─────────────────────────────────────────────
+   Knowledge Garden (.kg-*) design tokens
+   ───────────────────────────────────────────── */
+
+/* Card */
+.kg-card {
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background-color: var(--card);
+  transition: border-color 200ms ease, box-shadow 200ms ease, transform 200ms ease;
+}
+.kg-card:hover {
+  border-color: color-mix(in srgb, var(--primary) 45%, transparent);
+  box-shadow: 0 4px 20px -4px color-mix(in srgb, var(--primary) 15%, transparent);
+  transform: translateY(-2px);
+}
+.kg-card--high-contrast {
+  border-width: 2px;
+  border-color: var(--foreground);
+}
+.kg-card--high-contrast:hover {
+  border-color: var(--primary);
+}
+
+/* Badge */
+.kg-badge {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.2rem 0.4rem;
+  border-radius: 9999px;
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+}
+
+/* Filter section */
+.kg-filter-section {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+.kg-filter-section:last-child {
+  border-bottom: none;
+}
+
+/* Chip */
+.kg-chip {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.625rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background-color: var(--card);
+  color: var(--foreground);
+  transition: border-color 150ms ease, background-color 150ms ease, color 150ms ease;
+  cursor: pointer;
+}
+.kg-chip:hover {
+  border-color: color-mix(in srgb, var(--primary) 50%, transparent);
+  color: var(--primary);
+}
+.kg-chip--active {
+  border-color: var(--primary);
+  background-color: color-mix(in srgb, var(--primary) 12%, transparent);
+  color: var(--primary);
+}
+
+/* Shimmer skeleton */
+@keyframes kg-shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.kg-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--muted) 25%,
+    var(--card) 50%,
+    var(--muted) 75%
+  );
+  background-size: 800px 100%;
+  animation: kg-shimmer 1.5s infinite linear;
+  border-radius: var(--radius);
+}
+
+/* Modal slide-in */
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.animate-modal-in {
+  animation: modal-in 250ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}

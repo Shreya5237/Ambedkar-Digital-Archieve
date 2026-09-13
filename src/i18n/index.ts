@@ -6,7 +6,7 @@ const resources = {
     translation: {
       nav: {
         discover: "Discover",
-        search: "Search",
+        garden: "Knowledge Garden",
         timeline: "Timeline",
         explorer: "Knowledge Explorer",
         ask: "Ask the Archive",
@@ -81,7 +81,7 @@ const resources = {
     translation: {
       nav: {
         discover: "खोजें",
-        search: "खोज",
+        garden: "ज्ञान उद्यान",
         timeline: "समयरेखा",
         explorer: "ज्ञान अन्वेषक",
         ask: "पुरालेख से पूछें",
@@ -112,7 +112,7 @@ const resources = {
     translation: {
       nav: {
         discover: "शोधा",
-        search: "शोध",
+        garden: "ज्ञान बाग",
         timeline: "कालरेखा",
         explorer: "ज्ञान अन्वेषक",
         ask: "पुरालेखाला विचारा",
@@ -142,7 +142,7 @@ const resources = {
     translation: {
       nav: {
         discover: "கண்டறியுங்கள்",
-        search: "தேடல்",
+        garden: "அறிவுத் தோட்டம்",
         timeline: "காலக்கோடு",
         explorer: "அறிவு ஆய்வாளர்",
         ask: "ஆவணகத்திடம் கேளுங்கள்",

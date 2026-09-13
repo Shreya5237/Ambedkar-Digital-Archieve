@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { Link, useLocation, Outlet } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Sun, Moon, Search, Menu, X, Globe, Archive, ChevronDown } from "lucide-react";
+import { Sun, Moon, Sprout, Menu, X, Globe, Archive, ChevronDown } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 
 const NAV_LINKS = [
   { key: "discover", to: "/" },
-  { key: "search", to: "/search" },
+  { key: "garden", to: "/garden" },
   { key: "timeline", to: "/timeline" },
-  { key: "explorer", to: "/explorer" },
+  { key: "explorer", to: "/knowledge-explorer" },
   { key: "ask", to: "/ask" },
 ];
 
@@ -70,11 +70,11 @@ export default function Layout() {
             {/* Actions */}
             <div className="flex items-center gap-2">
               <Link
-                to="/search"
+                to="/garden"
                 className="p-2 rounded-sm hover:bg-[var(--muted)] transition-colors text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
-                aria-label="Search"
+                aria-label="Knowledge Garden"
               >
-                <Search className="w-4 h-4" />
+                <Sprout className="w-4 h-4" />
               </Link>
 
               {/* Language */}

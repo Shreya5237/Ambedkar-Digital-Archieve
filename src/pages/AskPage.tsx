@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Send, FileText, AlertCircle, CheckCircle, MessageSquare, Info, Sparkles } from "lucide-react";
+import { Send, FileText, AlertCircle, CheckCircle, MessageSquare, Info, Sparkles, PlusCircle, Sprout } from "lucide-react";
 import { askArchive } from "@/services/api";
 import type { ChatMessage } from "@/types/archive";
+import SidePanel from "@/components/ask/SidePanel";
 
 const EXAMPLE_QUESTIONS = [
   "What was the significance of the Mahad Satyagraha?",
@@ -41,14 +42,27 @@ const CONFIDENCE_META = {
 
 export default function AskPage() {
   const { t } = useTranslation();
+  const [searchParams] = useSearchParams();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const autoSubmittedRef = useRef(false);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
+
+  // Auto-submit question from URL ?q= param
+  useEffect(() => {
+    if (autoSubmittedRef.current) return;
+    const q = searchParams.get("q");
+    if (q) {
+      autoSubmittedRef.current = true;
+      handleSend(q);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSend = async (question: string) => {
     const q = question.trim();
@@ -74,14 +88,38 @@ export default function AskPage() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="flex h-full">
+    <div className="flex-1 max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-3 mb-2">
-          <MessageSquare className="w-5 h-5 text-[var(--primary)]" />
-          <h1 className="font-display text-3xl font-semibold">{t("ask.title")}</h1>
+      <div className="mb-8 flex items-start justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-3 mb-2">
+            <MessageSquare className="w-5 h-5 text-[var(--primary)]" />
+            <h1 className="font-display text-3xl font-semibold">{t("ask.title")}</h1>
+          </div>
+          <p className="text-sm text-[var(--muted-foreground)]">{t("ask.subtitle")}</p>
         </div>
-        <p className="text-sm text-[var(--muted-foreground)]">{t("ask.subtitle")}</p>
+        {/* Actions row */}
+        <div className="flex items-center gap-2 flex-shrink-0 mt-1">
+          {messages.length > 0 && (
+            <button
+              onClick={() => setMessages([])}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs border border-[var(--border)] rounded-sm hover:border-[var(--primary)]/50 hover:text-[var(--primary)] transition-colors"
+              title="Start a new conversation"
+            >
+              <PlusCircle className="w-3.5 h-3.5" />
+              New Chat
+            </button>
+          )}
+          <Link
+            to="/garden"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs border border-[var(--border)] rounded-sm hover:border-[var(--primary)]/50 hover:text-[var(--primary)] transition-colors"
+            title="Browse the archive"
+          >
+            <Sprout className="w-3.5 h-3.5" />
+            Explore Archive
+          </Link>
+        </div>
       </div>
 
       {/* Disclaimer */}
@@ -255,11 +293,14 @@ export default function AskPage() {
       {messages.length > 0 && (
         <button
           onClick={() => setMessages([])}
-          className="mt-3 text-xs text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors"
+          className="mt-3 text-xs text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors flex items-center gap-1"
         >
+          <PlusCircle className="w-3 h-3" />
           Clear conversation
         </button>
       )}
+    </div>
+    <SidePanel messages={messages} />
     </div>
   );
 }
