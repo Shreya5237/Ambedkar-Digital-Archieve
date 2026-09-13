@@ -104,6 +104,7 @@ export interface ArchiveItem {
   decade?: number;
   hasAudioDescription?: boolean;
   hasCaptions?: boolean;
+  translatedTranscripts?: Record<string, string>;
 }
 
 export interface GraphNode {

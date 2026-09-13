@@ -1,0 +1,58 @@
+[
+  {
+    "question": "Who compiled Volume 1 of Dr. Babasaheb Ambedkar's Writings and Speeches?",
+    "answer": "Volume 1 of Dr. Babasaheb Ambedkar's Writings and Speeches was compiled by Vasant Moon.",
+    "citation": "Volume1.pdf",
+    "language": "English"
+  },
+  {
+    "question": "When was the first edition of Volume 1 published and by whom?",
+    "answer": "The first edition was published on 14 April 1979 by the Education Department, Government of Maharashtra.",
+    "citation": "Volume1.pdf",
+    "language": "English"
+  },
+  {
+    "question": "What is the primary topic of Volume 17 (Part I)?",
+    "answer": "The primary topic of Volume 17 (Part I) is 'Dr. B.R. Ambedkar and His Egalitarian Revolution'.",
+    "citation": "Volume17_Part_I.pdf",
+    "language": "English"
+  },
+  {
+    "question": "Who are the editors of Volume 17 (Part I)?",
+    "answer": "Volume 17 (Part I) was edited by Hari Narake, Dr. M. L. Kasare, N. G. Kamble, and Ashok Godghate.",
+    "citation": "Volume17_Part_I.pdf",
+    "language": "English"
+  },
+  {
+    "question": "डॉ. बी. आर. अम्बेडकर संपूर्ण वाङ्मय के खंड 1 में कौन-से विषय शामिल हैं?",
+    "answer": "खंड 1 में 'भारत में जातियां एवं जाति-प्रथा-उन्मूलन', 'भाषायी प्रांतों पर विचार', और 'रानाडे, गांधी और जिन्ना' आदि विषय शामिल हैं।",
+    "citation": "VolumeH1.pdf",
+    "language": "Hindi",
+    "aliases": ["What topics are covered in Volume 1 of Dr. B.R. Ambedkar's collected works?"],
+    "englishAnswer": "Volume 1 covers topics such as 'Castes in India and Annihilation of Caste', 'Thoughts on Linguistic States', and 'Ranade, Gandhi and Jinnah'."
+  },
+  {
+    "question": "डॉ. बी. आर. अम्बेडकर संपूर्ण वाङ्मय का खंड 1 का पहला संस्करण कब प्रकाशित हुआ था?",
+    "answer": "खंड 1 का पहला संस्करण 1993 में प्रकाशित हुआ था।",
+    "citation": "VolumeH1.pdf",
+    "language": "Hindi",
+    "aliases": ["When was the first edition of Volume 1 of the Collected Works of Dr. B.R. Ambedkar published?", "When was the first edition of Volume 1 published?"],
+    "englishAnswer": "The first edition of Volume 1 was published in 1993."
+  },
+  {
+    "question": "डॉ. भीमराव अम्बेडकर संपूर्ण वाङ्मय के खंड 40 (भाग-3) का विषय क्या है?",
+    "answer": "खंड 40 (भाग-3) का विषय 'डॉ. भीमराव अम्बेडकर : लेख तथा वक्तव्य (वर्ष 1946-1956)' है।",
+    "citation": "VolumeH40.pdf",
+    "language": "Hindi",
+    "aliases": ["What is the topic of Volume 40 (Part-3) of Dr. Bhimrao Ambedkar's collected works?"],
+    "englishAnswer": "The topic of Volume 40 (Part-3) is 'Dr. Bhimrao Ambedkar: Articles and Statements (Years 1946-1956)'."
+  },
+  {
+    "question": "खंड 40 का प्रकाशक कौन है?",
+    "answer": "खंड 40 का प्रकाशक 'डॉ. अम्बेडकर प्रतिष्ठान, सामाजिक न्याय और अधिकारिता मंत्रालय, भारत सरकार' है।",
+    "citation": "VolumeH40.pdf",
+    "language": "Hindi",
+    "aliases": ["Who is the publisher of Volume 40?"],
+    "englishAnswer": "The publisher of Volume 40 is the 'Dr. Ambedkar Foundation, Ministry of Social Justice and Empowerment, Government of India'."
+  }
+]

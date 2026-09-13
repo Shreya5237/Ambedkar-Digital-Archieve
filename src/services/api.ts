@@ -11,6 +11,7 @@ import type {
   ChatMessage,
   SortOption,
 } from "@/types/archive";
+import extractedData from "../../data/data.json";
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -229,7 +230,36 @@ export async function askArchive(query: string): Promise<ChatMessage> {
     "I can help you explore the Ambedkar Digital Archive. Try asking about the Poona Pact, Annihilation of Caste, the Mahad Satyagraha, or his educational milestones.";
   let sources: ChatMessage["sources"] = [];
 
-  if (lowerQuery.includes("annihilation") || lowerQuery.includes("caste")) {
+  // 1. Check if the query matches anything in the extracted data.json
+  const matchedExtracted = extractedData.find((item: any) => {
+    // Simple heuristic: if a significant part of the question string is in the query or vice-versa
+    const qLower = (item.question || "").toLowerCase();
+    // removing punctuation for better match
+    const cleanQ = qLower.replace(/[?.,]/g, '');
+    const cleanUser = lowerQuery.replace(/[?.,]/g, '');
+    
+    let aliasMatch = false;
+    if (item.aliases) {
+      aliasMatch = item.aliases.some((alias: string) => {
+        const cleanAlias = alias.toLowerCase().replace(/[?.,]/g, '');
+        return cleanAlias.includes(cleanUser) || cleanUser.includes(cleanAlias);
+      });
+    }
+
+    return cleanQ.includes(cleanUser) || cleanUser.includes(cleanQ) || aliasMatch;
+  });
+
+  if (matchedExtracted) {
+    const isEnglishQuery = /^[a-zA-Z\s0-9?.,'":\-]*$/.test(lowerQuery);
+    content = (isEnglishQuery && matchedExtracted.englishAnswer) ? matchedExtracted.englishAnswer : matchedExtracted.answer;
+    sources = [
+      {
+        documentId: matchedExtracted.citation, // e.g. Volume1.pdf
+        title: matchedExtracted.citation,
+        excerpt: content,
+      }
+    ];
+  } else if (lowerQuery.includes("annihilation") || lowerQuery.includes("caste")) {
     content =
       "Dr. Ambedkar's most comprehensive critique of the caste system is his undelivered 1936 speech, 'Annihilation of Caste'. He argued that political reform was impossible without social reform and called for the destruction of the religious foundations of caste: 'You must destroy the Shastras.'";
     sources = [

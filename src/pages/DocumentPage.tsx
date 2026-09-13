@@ -20,13 +20,12 @@ import { getDocument } from "@/services/api";
 
 export default function DocumentPage() {
   const { id } = useParams<{ id: string }>();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [activeTab, setActiveTab] = useState<"transcript" | "metadata" | "provenance">("transcript");
   const [page, setPage] = useState(1);
   const [zoom, setZoom] = useState(100);
   const [copied, setCopied] = useState(false);
   const [docSearch, setDocSearch] = useState("");
-  const [showSideBySide, setShowSideBySide] = useState(true);
 
   const { data: doc, isLoading } = useQuery({
     queryKey: ["document", id],
@@ -72,6 +71,11 @@ export default function DocumentPage() {
     const re = new RegExp(`(${docSearch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi");
     return text.replace(re, `<mark class="bg-amber-200 dark:bg-amber-700 rounded-sm px-0.5">$1</mark>`);
   };
+
+  const currentLang = i18n.language.split('-')[0]; // e.g. 'en-US' -> 'en'
+  const displayTranscript = doc.translatedTranscripts && doc.translatedTranscripts[currentLang]
+    ? doc.translatedTranscripts[currentLang]
+    : doc.transcript;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -177,16 +181,6 @@ export default function DocumentPage() {
             </div>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setShowSideBySide((s) => !s)}
-                className={`px-3 py-1.5 text-xs rounded-sm border transition-colors ${
-                  showSideBySide
-                    ? "bg-[var(--primary)] text-[var(--primary-foreground)] border-[var(--primary)]"
-                    : "border-[var(--border)] hover:bg-[var(--muted)]"
-                }`}
-              >
-                Side-by-side
-              </button>
-              <button
                 onClick={() => setZoom((z) => Math.min(200, z + 25))}
                 className="p-1.5 rounded-sm border border-[var(--border)] hover:bg-[var(--muted)] transition-colors"
               >
@@ -202,10 +196,16 @@ export default function DocumentPage() {
             </div>
           </div>
 
-          <div className={`flex gap-4 ${showSideBySide ? "flex-row" : "flex-col"}`}>
-            {/* Document image */}
+          <div className="flex flex-col gap-4">
+            {/* Document image or PDF */}
             <div className="flex-1 border border-[var(--border)] rounded-sm overflow-hidden bg-[var(--muted)] flex items-center justify-center min-h-80">
-              {doc.thumbnailUrl ? (
+              {doc.fileUrl ? (
+                <iframe 
+                  src={doc.fileUrl} 
+                  className="w-full h-full min-h-[600px] border-0" 
+                  title={doc.title} 
+                />
+              ) : doc.thumbnailUrl ? (
                 <img
                   src={doc.thumbnailUrl}
                   alt={`${doc.title} — page ${page}`}
@@ -219,19 +219,6 @@ export default function DocumentPage() {
                 </div>
               )}
             </div>
-
-            {/* Side-by-side transcript */}
-            {showSideBySide && doc.transcript && (
-              <div className="flex-1 border border-[var(--border)] rounded-sm overflow-auto bg-[var(--card)] p-4 max-h-[600px]">
-                <div className="text-[10px] font-mono uppercase tracking-widest text-[var(--muted-foreground)] mb-3">
-                  Transcript
-                </div>
-                <div
-                  className="text-sm leading-relaxed whitespace-pre-wrap text-[var(--foreground)]"
-                  dangerouslySetInnerHTML={{ __html: highlightText(doc.transcript) }}
-                />
-              </div>
-            )}
           </div>
         </div>
 
@@ -274,11 +261,18 @@ export default function DocumentPage() {
           {/* Transcript tab */}
           {activeTab === "transcript" && (
             <div className="max-h-[600px] overflow-y-auto">
-              {doc.transcript ? (
-                <div
-                  className="text-sm leading-relaxed whitespace-pre-wrap text-[var(--foreground)]"
-                  dangerouslySetInnerHTML={{ __html: highlightText(doc.transcript) }}
-                />
+              {displayTranscript ? (
+                <div>
+                  {doc.translatedTranscripts && doc.translatedTranscripts[currentLang] && (
+                    <div className="mb-4 text-xs font-medium text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-3 py-2 rounded border border-green-200 dark:border-green-800 inline-block">
+                      ✓ Automatically translated to your language
+                    </div>
+                  )}
+                  <div
+                    className="text-sm leading-relaxed whitespace-pre-wrap text-[var(--foreground)]"
+                    dangerouslySetInnerHTML={{ __html: highlightText(displayTranscript) }}
+                  />
+                </div>
               ) : (
                 <div className="text-center py-12 text-[var(--muted-foreground)]">
                   <BookOpen className="w-8 h-8 mx-auto mb-3 opacity-40" />

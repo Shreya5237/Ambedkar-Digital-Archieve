@@ -1,8 +1,24 @@
 import { useState } from "react";
 import { Link, useLocation, Outlet } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Sun, Moon, Sprout, Menu, X, Globe, Archive, ChevronDown } from "lucide-react";
+import {
+  Sun,
+  Moon,
+  Sprout,
+  Menu,
+  X,
+  Globe,
+  Archive,
+  ChevronDown,
+  User as UserIcon,
+  Building2,
+  GraduationCap,
+  LogOut,
+  LogIn,
+  ShieldCheck,
+} from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
+import { useAuth } from "@/context/AuthContext";
 
 const NAV_LINKS = [
   { key: "discover", to: "/" },
@@ -10,6 +26,7 @@ const NAV_LINKS = [
   { key: "timeline", to: "/timeline" },
   { key: "explorer", to: "/knowledge-explorer" },
   { key: "ask", to: "/ask" },
+  { key: "institution", to: "/institution" },
 ];
 
 const LANGUAGES = [
@@ -22,9 +39,15 @@ const LANGUAGES = [
 export default function Layout() {
   const { t, i18n } = useTranslation();
   const { isDark, toggle } = useTheme();
+  const { user, isAuthenticated, logout } = useAuth();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+
+  const visibleNavLinks = NAV_LINKS.filter(
+    (link) => link.key !== "institution" || (isAuthenticated && user?.role === "institution")
+  );
 
   const isActive = (to: string) =>
     to === "/" ? location.pathname === "/" : location.pathname.startsWith(to);
@@ -52,7 +75,7 @@ export default function Layout() {
 
             {/* Desktop Nav */}
             <nav className="hidden lg:flex items-center gap-1">
-              {NAV_LINKS.map(({ key, to }) => (
+              {visibleNavLinks.map(({ key, to }) => (
                 <Link
                   key={key}
                   to={to}
@@ -80,7 +103,10 @@ export default function Layout() {
               {/* Language */}
               <div className="relative">
                 <button
-                  onClick={() => setLangOpen((o) => !o)}
+                  onClick={() => {
+                    setLangOpen((o) => !o);
+                    setUserMenuOpen(false);
+                  }}
                   className="p-2 rounded-sm hover:bg-[var(--muted)] transition-colors text-[var(--muted-foreground)] hover:text-[var(--foreground)] flex items-center gap-1"
                   aria-label="Change language"
                 >
@@ -116,6 +142,91 @@ export default function Layout() {
                 {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
               </button>
 
+              {/* Auth Button / Profile Menu */}
+              {isAuthenticated && user ? (
+                <div className="relative">
+                  <button
+                    onClick={() => {
+                      setUserMenuOpen((o) => !o);
+                      setLangOpen(false);
+                    }}
+                    className="flex items-center gap-2 pl-2 pr-2.5 py-1 rounded border border-[var(--border)] hover:border-[var(--primary)]/50 bg-[var(--card)] transition-all"
+                  >
+                    <div className="w-6 h-6 rounded-full bg-[var(--primary)] text-[var(--primary-foreground)] font-mono text-xs font-bold flex items-center justify-center">
+                      {user.name.charAt(0)}
+                    </div>
+                    <span className="hidden sm:inline-block text-xs font-medium max-w-[100px] truncate">
+                      {user.username}
+                    </span>
+                    <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-[var(--primary)]/15 text-[var(--primary)] font-semibold flex items-center gap-1">
+                      {user.role === "institution" ? (
+                        <>
+                          <Building2 className="w-2.5 h-2.5" />
+                          <span>Inst.</span>
+                        </>
+                      ) : (
+                        <>
+                          <GraduationCap className="w-2.5 h-2.5" />
+                          <span>User</span>
+                        </>
+                      )}
+                    </span>
+                    <ChevronDown className="w-3 h-3 text-[var(--muted-foreground)]" />
+                  </button>
+
+                  {userMenuOpen && (
+                    <div className="absolute right-0 top-full mt-1 w-64 bg-[var(--card)] border border-[var(--border)] rounded-sm shadow-xl py-2 z-50 animate-modal-in">
+                      <div className="px-4 py-2 border-b border-[var(--border)]">
+                        <div className="font-display font-semibold text-sm truncate">{user.name}</div>
+                        <div className="text-xs text-[var(--muted-foreground)] font-mono truncate">@{user.username}</div>
+                        <div className="mt-1.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono bg-[var(--muted)] text-[var(--foreground)] border border-[var(--border)]">
+                          <ShieldCheck className="w-3 h-3 text-[var(--primary)]" />
+                          {user.roleLabel}
+                        </div>
+                      </div>
+
+                      {user.organization && (
+                        <div className="px-4 py-2 text-xs text-[var(--muted-foreground)] border-b border-[var(--border)]">
+                          <div className="font-mono text-[10px] uppercase text-[var(--muted-foreground)]/70">Organization</div>
+                          <div className="truncate font-medium text-[var(--foreground)]">{user.organization}</div>
+                        </div>
+                      )}
+
+                      <div className="py-1">
+                        {user.role === "institution" && (
+                          <Link
+                            to="/institution"
+                            onClick={() => setUserMenuOpen(false)}
+                            className="w-full text-left px-4 py-2 text-xs font-semibold text-[var(--primary)] hover:bg-[var(--muted)] transition-colors flex items-center gap-2"
+                          >
+                            <Building2 className="w-3.5 h-3.5" />
+                            <span>Open Institution Portal ➔</span>
+                          </Link>
+                        )}
+                        <button
+                          onClick={() => {
+                            logout();
+                            setUserMenuOpen(false);
+                          }}
+                          className="w-full text-left px-4 py-2 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-[var(--muted)] transition-colors flex items-center gap-2"
+                        >
+                          <LogOut className="w-3.5 h-3.5" />
+                          Sign Out / Switch Account
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <Link
+                  to="/login"
+                  className="px-3 py-1.5 text-xs font-semibold rounded-sm bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-90 transition-opacity flex items-center gap-1.5 shadow-xs"
+                >
+                  <LogIn className="w-3.5 h-3.5" />
+                  <span>Sign In</span>
+                </Link>
+              )}
+
               {/* Mobile menu */}
               <button
                 className="lg:hidden p-2 rounded-sm hover:bg-[var(--muted)] transition-colors"
@@ -132,7 +243,7 @@ export default function Layout() {
         {menuOpen && (
           <div className="lg:hidden border-t border-[var(--border)] bg-[var(--background)]">
             <nav className="max-w-7xl mx-auto px-4 py-3 flex flex-col gap-1">
-              {NAV_LINKS.map(({ key, to }) => (
+              {visibleNavLinks.map(({ key, to }) => (
                 <Link
                   key={key}
                   to={to}
@@ -146,6 +257,35 @@ export default function Layout() {
                   {t(`nav.${key}`)}
                 </Link>
               ))}
+
+              <div className="pt-2 mt-2 border-t border-[var(--border)]">
+                {isAuthenticated && user ? (
+                  <div className="flex items-center justify-between px-3 py-2 bg-[var(--muted)]/50 rounded">
+                    <div>
+                      <div className="text-xs font-semibold">{user.name}</div>
+                      <div className="text-[10px] font-mono text-[var(--muted-foreground)]">@{user.username} ({user.roleLabel})</div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        logout();
+                        setMenuOpen(false);
+                      }}
+                      className="text-xs text-red-600 dark:text-red-400 font-medium hover:underline"
+                    >
+                      Sign Out
+                    </button>
+                  </div>
+                ) : (
+                  <Link
+                    to="/login"
+                    onClick={() => setMenuOpen(false)}
+                    className="w-full px-3 py-2 text-xs font-semibold rounded-sm bg-[var(--primary)] text-[var(--primary-foreground)] flex items-center justify-center gap-1.5"
+                  >
+                    <LogIn className="w-4 h-4" />
+                    <span>Sign In to Archive</span>
+                  </Link>
+                )}
+              </div>
             </nav>
           </div>
         )}
@@ -182,6 +322,9 @@ export default function Layout() {
                     {t(`nav.${key}`)}
                   </Link>
                 ))}
+                <Link to="/login" className="text-sm text-[var(--muted-foreground)] hover:text-[var(--primary)] transition-colors">
+                  Portal Login
+                </Link>
               </div>
             </div>
             <div>
@@ -207,3 +350,4 @@ export default function Layout() {
     </div>
   );
 }
+

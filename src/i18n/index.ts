@@ -10,6 +10,7 @@ const resources = {
         timeline: "Timeline",
         explorer: "Knowledge Explorer",
         ask: "Ask the Archive",
+        institution: "Institution Portal",
         documents: "Documents",
         people: "People",
         events: "Events",
