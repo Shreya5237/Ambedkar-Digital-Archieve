@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { getFeaturedDocuments, getFeaturedEvents, getAllTopics } from "@/services/api";
 import type { ContentType } from "@/types/archive";
+import MultimediaVaultSection from "@/components/media/MultimediaVaultSection";
 
 const CONTENT_TYPE_LABELS: Record<ContentType, string> = {
   speech: "Speech",
@@ -262,6 +263,9 @@ export default function HomePage() {
             ))}
           </div>
         </section>
+
+        {/* Archival Heritage Media Vault (Volumes, Voice, Video & Photos) */}
+        <MultimediaVaultSection />
 
         {/* Featured Events */}
         <section className="py-12 border-t border-[var(--border)]">

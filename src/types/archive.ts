@@ -12,11 +12,125 @@ export type ContentType =
 
 export type Language = "en" | "hi" | "mr" | "ta";
 
-export type EntityType = "PERSON" | "DOCUMENT" | "EVENT" | "TOPIC" | "PLACE" | "PUBLICATION";
+export type EntityType = "PERSON" | "DOCUMENT" | "EVENT" | "TOPIC" | "PLACE" | "PUBLICATION" | "SOURCE";
+
+export type ConfidenceLevel = "verified" | "high" | "medium" | "low" | "insufficient";
+
+export type DatePrecision = "day" | "month" | "year" | "approximate";
+
+export type TimePrecision = "exact" | "approximate" | "unknown";
+
+export interface HistoricalTime {
+  value: string | null;
+  precision: TimePrecision;
+  note?: string;
+}
+
+export type SourceType =
+  | "official_archive"
+  | "constitutional_record"
+  | "institutional_archive"
+  | "university_archive"
+  | "academic_edition"
+  | "wikimedia_commons"
+  | "secondary";
+
+export type SourcePriority = 1 | 2 | 3 | 4 | 5 | 6 | 7;
+
+export interface Source {
+  id: string;
+  title: string;
+  url?: string;
+  sourceType: SourceType;
+  institution: string;
+  publicationDate?: string;
+  volume?: string;
+  pages?: string;
+  confidence: ConfidenceLevel;
+  provenance: string;
+  priority: SourcePriority;
+}
+
+export interface Evidence {
+  id: string;
+  claimStatement: string;
+  sourceId: string;
+  sourceTitle: string;
+  pageOrRef?: string;
+  quote?: string;
+  confidence: ConfidenceLevel;
+}
+
+export interface HistoricalImage {
+  id: string;
+  title: string;
+  url: string;
+  thumbnailUrl?: string;
+  caption: string;
+  date?: string;
+  eventId?: string;
+  personIds?: string[];
+  locationId?: string;
+  sourceInstitution: string;
+  sourceUrl?: string;
+  provenance: string;
+  license: string;
+  confidence: ConfidenceLevel;
+}
+
+export interface HistoricalAudio {
+  id: string;
+  title: string;
+  audioUrl: string;
+  duration?: string;
+  speaker?: string;
+  date?: string;
+  eventId?: string;
+  language?: string;
+  sourceInstitution: string;
+  sourceUrl?: string;
+  provenance: string;
+  transcript: string;
+  audioAcousticInfo?: string;
+  license: string;
+  confidence: ConfidenceLevel;
+}
+
+export interface HistoricalVideo {
+  id: string;
+  title: string;
+  videoUrl: string;
+  posterUrl?: string;
+  duration?: string;
+  date?: string;
+  eventId?: string;
+  sourceInstitution: string;
+  sourceUrl?: string;
+  provenance: string;
+  description: string;
+  transcript?: string;
+  license: string;
+  confidence: ConfidenceLevel;
+}
+
+export interface Location {
+  id: string;
+  name: string;
+  siteName?: string;
+  region?: string;
+  state?: string;
+  country: string;
+  coordinates?: { lat: number; lng: number };
+  description?: string;
+  historicalNote?: string;
+}
+
+export type Place = Location;
 
 export interface Person {
   id: string;
   name: string;
+  nativeName?: string;
   born?: string;
   died?: string;
   description: string;
@@ -24,15 +138,7 @@ export interface Person {
   image?: string;
   documentCount: number;
   relatedPeople?: string[];
-}
-
-export interface Place {
-  id: string;
-  name: string;
-  region: string;
-  country: string;
-  description: string;
-  coordinates?: { lat: number; lng: number };
+  associations?: string[];
 }
 
 export interface Publication {
@@ -49,21 +155,77 @@ export interface Topic {
   description: string;
   documentCount: number;
   color: string;
+  eventCount?: number;
 }
 
-export interface ArchiveEvent {
-  id: string;
+export type EventCategory =
+  | "life"
+  | "education"
+  | "political"
+  | "legal"
+  | "publication"
+  | "constitutional"
+  | "religious"
+  | "labour";
+
+export type HistoricalTrajectory =
+  | "mahad_movement"
+  | "constitutional_journey"
+  | "religious_liberation"
+  | "gender_equality"
+  | "education_early_life"
+  | "labour_reforms"
+  | "general";
+
+export interface RelatedEventLink {
+  eventId: string;
   title: string;
-  date: string;
+  year?: number;
+  relationType:
+    | "precursor_to"
+    | "led_to"
+    | "part_of_movement"
+    | "culmination_of"
+    | "parallel_to"
+    | "legal_outcome_of"
+    | "response_to"
+    | "related_to";
+  description?: string;
+}
+
+export interface HistoricalEvent {
+  id: string;
+  event_id?: string;
+  title: string;
+  startDate: string;
+  endDate?: string;
+  date: string; // Formatted date e.g. "20 Mar 1927"
   year: number;
+  datePrecision: DatePrecision;
+  time: HistoricalTime;
   description: string;
   significance: string;
-  people: string[];
+  locationDetails?: Location;
   places: string[];
-  documents: string[];
+  people: string[];
+  personDetails?: Person[];
+  themes: string[];
   topics: string[];
+  relatedDocuments: string[];
+  documents: string[]; // backward compatibility
+  relatedImages: HistoricalImage[];
+  relatedAudios?: HistoricalAudio[];
+  relatedVideos?: HistoricalVideo[];
   image?: string;
+  relatedEvents: RelatedEventLink[];
+  evidence: Evidence[];
+  sources: Source[];
+  confidence: ConfidenceLevel;
+  eventType: EventCategory;
+  trajectory?: HistoricalTrajectory;
 }
+
+export type ArchiveEvent = HistoricalEvent;
 
 export interface ArchiveItem {
   id: string;
@@ -95,7 +257,6 @@ export interface ArchiveItem {
   rights: string;
   provenance: string;
   pageCount?: number;
-  /** Primary media type for multimodal evidence rendering */
   mediaType?: "image" | "audio" | "video";
   caption?: string;
   country?: string;
@@ -105,6 +266,8 @@ export interface ArchiveItem {
   hasAudioDescription?: boolean;
   hasCaptions?: boolean;
   translatedTranscripts?: Record<string, string>;
+  sources?: Source[];
+  evidence?: Evidence[];
 }
 
 export interface GraphNode {
@@ -121,6 +284,7 @@ export interface GraphEdge {
   source: string;
   target: string;
   relation: string;
+  type?: string;
 }
 
 export interface GraphData {
@@ -138,7 +302,7 @@ export interface SearchFilters {
   eventId?: string;
   topicId?: string;
   placeId?: string;
-  // Extended Knowledge Garden filters
+  location?: string;
   yearFrom?: number;
   yearTo?: number;
   country?: string;
@@ -152,6 +316,9 @@ export interface SearchFilters {
   hasCaptions?: boolean;
   keywords?: string;
   theme?: string;
+  confidence?: ConfidenceLevel;
+  sourceType?: SourceType;
+  trajectory?: HistoricalTrajectory;
 }
 
 export interface FilterObject {
@@ -172,6 +339,9 @@ export interface FilterObject {
   hasAudioDescription: boolean;
   hasCaptions: boolean;
   highContrast: boolean;
+  confidence?: string;
+  sourceType?: string;
+  trajectory?: string;
 }
 
 export type SortOption = "relevance" | "date-asc" | "date-desc" | "title-asc";
@@ -179,20 +349,37 @@ export type SortOption = "relevance" | "date-asc" | "date-desc" | "title-asc";
 export interface SearchResults {
   documents: ArchiveItem[];
   people: Person[];
-  events: ArchiveEvent[];
+  events: HistoricalEvent[];
   topics: Topic[];
+  sources?: Source[];
   total: number;
 }
 
 export interface TimelineEntry {
   id: string;
+  event_id?: string;
   year: number;
   date: string;
+  startDate?: string;
+  datePrecision?: DatePrecision;
+  time?: HistoricalTime;
   title: string;
   description: string;
-  eventType: "life" | "political" | "legal" | "publication" | "constitutional";
+  significance?: string;
+  eventType: EventCategory;
   documentIds: string[];
+  relatedDocuments?: string[];
   image?: string;
+  relatedImages?: HistoricalImage[];
+  places?: string[];
+  locationDetails?: Location;
+  people?: string[];
+  themes?: string[];
+  relatedEvents?: RelatedEventLink[];
+  evidence?: Evidence[];
+  sources?: Source[];
+  confidence?: ConfidenceLevel;
+  trajectory?: HistoricalTrajectory;
 }
 
 export interface ChatMessage {
@@ -201,13 +388,25 @@ export interface ChatMessage {
   content: string;
   timestamp: string;
   sources?: SourceCitation[];
-  confidence?: "high" | "medium" | "low" | "insufficient";
+  confidence?: ConfidenceLevel;
+  extractedEntities?: {
+    people?: string[];
+    events?: string[];
+    topics?: string[];
+    dates?: string[];
+    locations?: string[];
+  };
+  timeWarning?: string;
 }
 
 export interface SourceCitation {
-  documentId: string;
+  documentId?: string;
+  sourceId?: string;
   title: string;
   page?: string;
   excerpt: string;
   url?: string;
+  institution?: string;
+  priority?: SourcePriority;
+  confidence?: ConfidenceLevel;
 }

@@ -1,4 +1,14 @@
-import { topics, timeline, people, documents, events, graphData } from "@/data/mockData";
+import {
+  topics,
+  timeline,
+  people,
+  documents,
+  events,
+  graphData,
+  historicalSources,
+  historicalLocations,
+  completeHistoricalEvents,
+} from "@/data/mockData";
 import type {
   SearchFilters,
   SearchResults,
@@ -10,8 +20,10 @@ import type {
   GraphData,
   ChatMessage,
   SortOption,
+  Source,
+  Location,
 } from "@/types/archive";
-import extractedData from "../../data/data.json";
+import { executeGroundedRAG } from "./ragService";
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -20,12 +32,12 @@ const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function getAllTopics(): Promise<Topic[]> {
-  await delay(300);
+  await delay(200);
   return topics;
 }
 
 export async function getTimeline(): Promise<TimelineEntry[]> {
-  await delay(300);
+  await delay(200);
   return timeline;
 }
 
@@ -34,12 +46,12 @@ export async function getTimeline(): Promise<TimelineEntry[]> {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function getAllPeople(): Promise<Person[]> {
-  await delay(300);
+  await delay(200);
   return people;
 }
 
 export async function getPerson(id: string): Promise<Person | undefined> {
-  await delay(300);
+  await delay(200);
   return people.find((p) => p.id === id);
 }
 
@@ -48,22 +60,22 @@ export async function getPerson(id: string): Promise<Person | undefined> {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function getAllDocuments(): Promise<ArchiveItem[]> {
-  await delay(300);
+  await delay(200);
   return documents;
 }
 
 export async function getFeaturedDocuments(): Promise<ArchiveItem[]> {
-  await delay(300);
+  await delay(200);
   return documents.slice(0, 6);
 }
 
 export async function getDocument(id: string): Promise<ArchiveItem | undefined> {
-  await delay(300);
+  await delay(200);
   return documents.find((d) => d.id === id);
 }
 
 export async function getItemById(id: string): Promise<ArchiveItem | undefined> {
-  await delay(200);
+  await delay(150);
   return documents.find((d) => d.id === id);
 }
 
@@ -72,13 +84,38 @@ export async function getItemById(id: string): Promise<ArchiveItem | undefined> 
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function getFeaturedEvents(): Promise<ArchiveEvent[]> {
-  await delay(300);
-  return events;
+  await delay(200);
+  // Return unique events (excluding duplicate legacy aliases for the list)
+  return events.filter((e) => !["E1", "E2", "E3", "E4"].includes(e.id));
 }
 
 export async function getEvent(id: string): Promise<ArchiveEvent | undefined> {
-  await delay(300);
-  return events.find((e) => e.id === id);
+  await delay(200);
+  return events.find((e) => e.id === id || e.event_id === id);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Sources & Locations
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function getAllSources(): Promise<Source[]> {
+  await delay(200);
+  return historicalSources;
+}
+
+export async function getSource(id: string): Promise<Source | undefined> {
+  await delay(150);
+  return historicalSources.find((s) => s.id === id);
+}
+
+export async function getAllLocations(): Promise<Location[]> {
+  await delay(200);
+  return historicalLocations;
+}
+
+export async function getLocation(id: string): Promise<Location | undefined> {
+  await delay(150);
+  return historicalLocations.find((l) => l.id === id);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -86,19 +123,19 @@ export async function getEvent(id: string): Promise<ArchiveEvent | undefined> {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function getGraph(): Promise<GraphData> {
-  await delay(400);
+  await delay(300);
   return graphData;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Search  –  real client-side filtering
+// Search  –  Multimodal Historical Archive Search
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function searchArchive(
   filters: SearchFilters,
   sort: SortOption = "relevance"
 ): Promise<SearchResults> {
-  await delay(400);
+  await delay(300);
 
   const q = (filters.query ?? filters.keywords ?? "").toLowerCase().trim();
   const today = new Date();
@@ -106,8 +143,8 @@ export async function searchArchive(
     today.getDate()
   ).padStart(2, "0")}`;
 
+  // 1. Filter Documents
   let filteredDocs = documents.filter((doc) => {
-    // Full-text / keyword
     if (q) {
       const haystack = [
         doc.title,
@@ -123,57 +160,38 @@ export async function searchArchive(
       if (!haystack.includes(q)) return false;
     }
 
-    // Content type
     if (filters.contentType && doc.contentType !== filters.contentType) return false;
-
-    // Language
     if (filters.language && doc.language !== filters.language) return false;
-
-    // Topic
     if (filters.topicId && !doc.topicIds.includes(filters.topicId)) return false;
-
-    // Person
     if (filters.personId && !doc.personIds.includes(filters.personId)) return false;
-
-    // Event
     if (filters.eventId && !doc.eventIds.includes(filters.eventId)) return false;
-
-    // Year range (string form: "YYYY-MM-DD" vs numeric)
     if (filters.yearFrom && doc.year < filters.yearFrom) return false;
     if (filters.yearTo && doc.year > filters.yearTo) return false;
-
-    // Date range (ISO strings)
     if (filters.dateFrom && doc.date < filters.dateFrom) return false;
     if (filters.dateTo && doc.date > filters.dateTo) return false;
 
-    // Decade
     if (filters.decade) {
       const d = Number(filters.decade);
       if (!isNaN(d) && doc.decade !== d) return false;
     }
 
-    // Geographic
     if (filters.country && doc.country?.toLowerCase() !== filters.country.toLowerCase()) return false;
     if (filters.state && doc.state?.toLowerCase() !== filters.state.toLowerCase()) return false;
     if (filters.city && doc.city?.toLowerCase() !== filters.city.toLowerCase()) return false;
 
-    // Media type
     if (filters.mediaType && doc.mediaType !== filters.mediaType) return false;
-
-    // Accessibility
     if (filters.hasAudioDescription && !doc.hasAudioDescription) return false;
     if (filters.hasCaptions && !doc.hasCaptions) return false;
 
-    // Today in history (match month-day)
     if (filters.todayInHistory) {
-      const docMD = doc.date.slice(5); // "MM-DD"
+      const docMD = doc.date.slice(5);
       if (docMD !== todayMD) return false;
     }
 
     return true;
   });
 
-  // Sorting
+  // Sort Documents
   switch (sort) {
     case "date-asc":
       filteredDocs = [...filteredDocs].sort((a, b) => a.year - b.year);
@@ -186,180 +204,94 @@ export async function searchArchive(
       break;
     case "relevance":
     default:
-      // Keep natural order (approximates relevance for mock data)
       break;
   }
 
-  // Filter people by query
+  // 2. Filter People
   const filteredPeople = q
     ? people.filter((p) =>
-        [p.name, p.description, ...(p.roles ?? [])].join(" ").toLowerCase().includes(q)
+        [p.name, p.nativeName ?? "", p.description, ...(p.roles ?? []), ...(p.associations ?? [])]
+          .join(" ")
+          .toLowerCase()
+          .includes(q)
       )
     : people;
 
-  // Filter events by query
-  const filteredEvents = q
-    ? events.filter((e) =>
-        [e.title, e.description, e.significance].join(" ").toLowerCase().includes(q)
-      )
-    : events;
+  // 3. Filter Events (searching complete historical record, avoiding legacy duplicates)
+  const uniqueEvents = events.filter((e) => !["E1", "E2", "E3", "E4"].includes(e.id));
+  let filteredEvents = uniqueEvents.filter((e) => {
+    if (q) {
+      const haystack = [
+        e.title,
+        e.description,
+        e.significance,
+        ...(e.themes ?? []),
+        ...(e.topics ?? []),
+        ...(e.places ?? []),
+        ...(e.people ?? []),
+      ]
+        .join(" ")
+        .toLowerCase();
+      if (!haystack.includes(q)) return false;
+    }
 
-  // Filter topics by query
+    if (filters.personId && !e.people.includes(filters.personId)) return false;
+    if (filters.yearFrom && e.year < filters.yearFrom) return false;
+    if (filters.yearTo && e.year > filters.yearTo) return false;
+    if (filters.confidence && e.confidence !== filters.confidence) return false;
+    if (filters.trajectory && e.trajectory !== filters.trajectory) return false;
+    if (filters.theme && !e.themes.some((t) => t.toLowerCase().includes(filters.theme!.toLowerCase()))) return false;
+    if (filters.location && !e.places.some((p) => p.toLowerCase().includes(filters.location!.toLowerCase()))) return false;
+
+    if (filters.decade) {
+      const d = Number(filters.decade);
+      if (!isNaN(d) && Math.floor(e.year / 10) * 10 !== d) return false;
+    }
+
+    if (filters.todayInHistory && e.startDate) {
+      const eMD = e.startDate.slice(5);
+      if (eMD !== todayMD) return false;
+    }
+
+    return true;
+  });
+
+  // Sort Events
+  if (sort === "date-asc") {
+    filteredEvents = [...filteredEvents].sort((a, b) => a.year - b.year);
+  } else if (sort === "date-desc") {
+    filteredEvents = [...filteredEvents].sort((a, b) => b.year - a.year);
+  } else if (sort === "title-asc") {
+    filteredEvents = [...filteredEvents].sort((a, b) => a.title.localeCompare(b.title));
+  }
+
+  // 4. Filter Topics
   const filteredTopics = q
     ? topics.filter((t) => [t.label, t.description].join(" ").toLowerCase().includes(q))
     : topics;
+
+  // 5. Filter Sources
+  const filteredSources = q
+    ? historicalSources.filter((s) =>
+        [s.title, s.institution, s.provenance, s.volume ?? ""].join(" ").toLowerCase().includes(q)
+      )
+    : historicalSources;
 
   return {
     documents: filteredDocs,
     people: filteredPeople,
     events: filteredEvents,
     topics: filteredTopics,
-    total: filteredDocs.length + filteredPeople.length + filteredEvents.length,
+    sources: filteredSources,
+    total: filteredDocs.length + filteredPeople.length + filteredEvents.length + filteredSources.length,
   };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Ask / Chat
+// Ask / Chat  –  Grounded RAG Pipeline
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function askArchive(query: string): Promise<ChatMessage> {
-  await delay(900);
-
-  const lowerQuery = query.toLowerCase();
-  let content =
-    "I can help you explore the Ambedkar Digital Archive. Try asking about the Poona Pact, Annihilation of Caste, the Mahad Satyagraha, or his educational milestones.";
-  let sources: ChatMessage["sources"] = [];
-
-  // 1. Check if the query matches anything in the extracted data.json
-  const matchedExtracted = extractedData.find((item: any) => {
-    // Simple heuristic: if a significant part of the question string is in the query or vice-versa
-    const qLower = (item.question || "").toLowerCase();
-    // removing punctuation for better match
-    const cleanQ = qLower.replace(/[?.,]/g, '');
-    const cleanUser = lowerQuery.replace(/[?.,]/g, '');
-    
-    let aliasMatch = false;
-    if (item.aliases) {
-      aliasMatch = item.aliases.some((alias: string) => {
-        const cleanAlias = alias.toLowerCase().replace(/[?.,]/g, '');
-        return cleanAlias.includes(cleanUser) || cleanUser.includes(cleanAlias);
-      });
-    }
-
-    return cleanQ.includes(cleanUser) || cleanUser.includes(cleanQ) || aliasMatch;
-  });
-
-  if (matchedExtracted) {
-    const isEnglishQuery = /^[a-zA-Z\s0-9?.,'":\-]*$/.test(lowerQuery);
-    content = (isEnglishQuery && matchedExtracted.englishAnswer) ? matchedExtracted.englishAnswer : matchedExtracted.answer;
-    sources = [
-      {
-        documentId: matchedExtracted.citation, // e.g. Volume1.pdf
-        title: matchedExtracted.citation,
-        excerpt: content,
-      }
-    ];
-  } else if (lowerQuery.includes("annihilation") || lowerQuery.includes("caste")) {
-    content =
-      "Dr. Ambedkar's most comprehensive critique of the caste system is his undelivered 1936 speech, 'Annihilation of Caste'. He argued that political reform was impossible without social reform and called for the destruction of the religious foundations of caste: 'You must destroy the Shastras.'";
-    sources = [
-      {
-        documentId: "D1",
-        title: "Annihilation of Caste",
-        excerpt:
-          "If you wish to bring about a breach in the system, then you have got to apply the dynamite to the Vedas and the Shastras…",
-      },
-    ];
-  } else if (lowerQuery.includes("poona") || lowerQuery.includes("pact") || lowerQuery.includes("gandhi")) {
-    content =
-      "The Poona Pact was signed on September 24, 1932, between Dr. B.R. Ambedkar and Mahatma Gandhi's representatives. It secured reserved electoral seats for the depressed classes in exchange for abandoning the demand for separate electorates.";
-    sources = [
-      {
-        documentId: "D4",
-        title: "The Poona Pact Agreement",
-        excerpt: "Formal agreement finalizing reserved electoral seats for the depressed classes.",
-      },
-      {
-        documentId: "D12",
-        title: "Letter to Gandhi on Separate Electorates",
-        excerpt: "Articulating Ambedkar's position on separate electorates and the rights of the depressed classes.",
-      },
-    ];
-  } else if (lowerQuery.includes("education") || lowerQuery.includes("columbia")) {
-    content =
-      "Dr. Ambedkar had an exceptional educational background. He earned his M.A. in Economics from Columbia University in 1915 and his doctoral degree at the London School of Economics in 1923. He was one of the most highly educated Indians of his time.";
-    sources = [
-      {
-        documentId: "D3",
-        title: "Administration and Finance of the East India Company",
-        excerpt: "His M.A. dissertation analyzing financial systems under British rule.",
-      },
-      {
-        documentId: "D10",
-        title: "Problem of the Rupee: Its Origin and Its Solution",
-        excerpt: "Doctoral thesis examining the history of the Indian rupee.",
-      },
-    ];
-  } else if (lowerQuery.includes("mahad") || lowerQuery.includes("satyagraha") || lowerQuery.includes("water")) {
-    content =
-      "The Mahad Satyagraha of 1927 was a watershed moment in the Dalit movement. Dr. Ambedkar led untouchables to the Chavadar tank in Mahad to assert their legal right to use public water. The conference also symbolically burned the Manusmriti.";
-    sources = [
-      {
-        documentId: "D2",
-        title: "Address at Mahad Satyagraha",
-        excerpt: "Speech delivered during the second Mahad conference where the Manusmriti was symbolically burned.",
-      },
-    ];
-  } else if (lowerQuery.includes("buddhism") || lowerQuery.includes("convert") || lowerQuery.includes("dhamma")) {
-    content =
-      "On October 14, 1956, Dr. Ambedkar converted to Buddhism at Deekshabhoomi, Nagpur, along with approximately 600,000 followers. He viewed Buddhism as the path to liberation from the caste system. His magnum opus 'The Buddha and His Dhamma' was published posthumously in 1957.";
-    sources = [
-      {
-        documentId: "D6",
-        title: "The Buddha and His Dhamma",
-        excerpt: "A re-interpretation of the Buddha's teachings and their relevance to social liberation.",
-      },
-      {
-        documentId: "D16",
-        title: "Conversion Ceremony at Deekshabhoomi – Newsreel",
-        excerpt: "Newsreel documenting the mass conversion ceremony at Nagpur.",
-      },
-    ];
-  } else if (lowerQuery.includes("constitution") || lowerQuery.includes("draft") || lowerQuery.includes("preamble")) {
-    content =
-      "Dr. Ambedkar was appointed Chairman of the Constitution Drafting Committee on August 29, 1947. He is rightly called the 'Father of the Indian Constitution'. The Constitution he helped draft enshrined fundamental rights, reserved seats for Dalits and Adivasis, and abolished untouchability under Article 17.";
-    sources = [
-      {
-        documentId: "D7",
-        title: "Draft of the Indian Constitution – Preamble",
-        excerpt: "Early draft establishing the foundational principles of justice, liberty, equality and fraternity.",
-      },
-    ];
-  } else if (lowerQuery.includes("woman") || lowerQuery.includes("women") || lowerQuery.includes("hindu code")) {
-    content =
-      "Dr. Ambedkar was a strong advocate for women's rights. As Law Minister, he championed the Hindu Code Bill, which sought to grant Hindu women equal rights in marriage, divorce and inheritance. When the bill was diluted and shelved, he resigned from the Cabinet in 1951.";
-    sources = [
-      {
-        documentId: "D14",
-        title: "The Hindu Code Bill – Speech in Parliament",
-        excerpt: "Last major parliamentary speech defending the Hindu Code Bill.",
-      },
-      {
-        documentId: "D21",
-        title: "On the Hindu Code Bill – Resignation Letter",
-        excerpt: "Letter of resignation citing failure to pass the Hindu Code Bill.",
-      },
-    ];
-  } else if (lowerQuery.length > 5) {
-    content = `Based on the archives, here is some information regarding "${query}": Dr. Ambedkar's extensive writings cover constitutional law, economics, social justice, religion and labour rights. Try narrowing your question to one of these areas for a more specific answer.`;
-  }
-
-  return {
-    id: Date.now().toString(),
-    role: "assistant",
-    content,
-    timestamp: new Date().toISOString(),
-    sources,
-    confidence: sources && sources.length > 0 ? "high" : "medium",
-  };
+  await delay(600);
+  return executeGroundedRAG(query);
 }

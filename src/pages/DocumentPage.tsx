@@ -15,8 +15,15 @@ import {
   Check,
   ArrowLeft,
   ExternalLink,
+  Radio,
+  Film,
+  Download,
+  HelpCircle,
 } from "lucide-react";
 import { getDocument } from "@/services/api";
+import ArchivalAudioPlayer from "@/components/media/ArchivalAudioPlayer";
+import ArchivalVideoPlayer from "@/components/media/ArchivalVideoPlayer";
+import VolumeCitationCard from "@/components/media/VolumeCitationCard";
 
 export default function DocumentPage() {
   const { id } = useParams<{ id: string }>();
@@ -197,33 +204,100 @@ export default function DocumentPage() {
           </div>
 
           <div className="flex flex-col gap-4">
-            {/* Document image or PDF */}
-            <div className="flex-1 border border-[var(--border)] rounded-sm overflow-hidden bg-[var(--muted)] flex items-center justify-center min-h-80">
-              {doc.fileUrl ? (
-                <iframe 
-                  src={doc.fileUrl} 
-                  className="w-full h-full min-h-[600px] border-0" 
-                  title={doc.title} 
+            {/* Audio Document Viewer */}
+            {doc.mediaType === "audio" ? (
+              <div className="p-2">
+                <ArchivalAudioPlayer
+                  audio={{
+                    id: doc.id,
+                    title: doc.title,
+                    audioUrl: doc.fileUrl || "/audio/speech.mp3",
+                    speaker: doc.author,
+                    date: doc.date,
+                    sourceInstitution: doc.sourceInstitution,
+                    provenance: doc.provenance,
+                    transcript: doc.transcript || doc.summary,
+                    license: doc.rights,
+                    confidence: "verified",
+                  }}
                 />
-              ) : doc.thumbnailUrl ? (
-                <img
-                  src={doc.thumbnailUrl}
-                  alt={`${doc.title} — page ${page}`}
-                  className="max-w-full transition-transform duration-200"
-                  style={{ transform: `scale(${zoom / 100})`, transformOrigin: "top center" }}
+              </div>
+            ) : doc.mediaType === "video" ? (
+              <div className="p-2">
+                <ArchivalVideoPlayer
+                  video={{
+                    id: doc.id,
+                    title: doc.title,
+                    videoUrl: doc.fileUrl || "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+                    posterUrl: doc.thumbnailUrl,
+                    date: doc.date,
+                    sourceInstitution: doc.sourceInstitution,
+                    provenance: doc.provenance,
+                    description: doc.summary,
+                    transcript: doc.transcript,
+                    license: doc.rights,
+                    confidence: "verified",
+                  }}
                 />
-              ) : (
-                <div className="text-center text-[var(--muted-foreground)] p-8">
-                  <FileText className="w-12 h-12 mx-auto mb-3 opacity-40" />
-                  <p className="text-sm">Document image not available</p>
+              </div>
+            ) : (
+              /* Document image or PDF Reader */
+              <div className="flex-1 border border-[var(--border)] rounded-sm overflow-hidden bg-[var(--muted)] flex flex-col min-h-80">
+                {doc.fileUrl && doc.fileUrl.endsWith(".pdf") && (
+                  <div className="p-2.5 bg-[var(--card)] border-b border-[var(--border)] flex items-center justify-between gap-2 text-xs font-mono">
+                    <span className="text-[var(--primary)] font-bold flex items-center gap-1.5">
+                      <FileText className="w-3.5 h-3.5" />
+                      Official Digitized Archival PDF
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <a
+                        href={doc.fileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-2.5 py-1 rounded bg-[var(--muted)] hover:bg-[var(--border)] text-[var(--foreground)] flex items-center gap-1 transition-colors"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                        <span>Open Full Screen</span>
+                      </a>
+                      <a
+                        href={doc.fileUrl}
+                        download
+                        className="px-2.5 py-1 rounded bg-[var(--primary)] text-[var(--primary-foreground)] flex items-center gap-1 hover:opacity-90 transition-opacity"
+                      >
+                        <Download className="w-3 h-3" />
+                        <span>Download</span>
+                      </a>
+                    </div>
+                  </div>
+                )}
+                <div className="flex-1 flex items-center justify-center min-h-[550px]">
+                  {doc.fileUrl ? (
+                    <iframe 
+                      src={doc.fileUrl} 
+                      className="w-full h-full min-h-[600px] border-0" 
+                      title={doc.title} 
+                    />
+                  ) : doc.thumbnailUrl ? (
+                    <img
+                      src={doc.thumbnailUrl}
+                      alt={`${doc.title} — page ${page}`}
+                      className="max-w-full transition-transform duration-200"
+                      style={{ transform: `scale(${zoom / 100})`, transformOrigin: "top center" }}
+                    />
+                  ) : (
+                    <div className="text-center text-[var(--muted-foreground)] p-8">
+                      <FileText className="w-12 h-12 mx-auto mb-3 opacity-40" />
+                      <p className="text-sm">Document image not available</p>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Right: Tabs */}
-        <div className="lg:col-span-2">
+        {/* Right: Tabs & Grounded Citations */}
+        <div className="lg:col-span-2 space-y-6">
           {/* Tab nav */}
           <div className="flex border-b border-[var(--border)] mb-4">
             {(["transcript", "metadata", "provenance"] as const).map((tab) => {
@@ -377,6 +451,9 @@ export default function DocumentPage() {
               </div>
             </div>
           )}
+
+          {/* Volume Q&A & Archival Citation Assistant from data.json */}
+          <VolumeCitationCard currentPdfName={doc.id} />
         </div>
       </div>
 

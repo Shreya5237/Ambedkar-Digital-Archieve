@@ -14,9 +14,12 @@ import {
   ExternalLink,
   Volume2,
   Captions,
+  Download,
 } from "lucide-react";
 import type { ArchiveItem } from "@/types/archive";
 import { topics as allTopics, people as allPeople } from "@/data/mockData";
+import ArchivalAudioPlayer from "@/components/media/ArchivalAudioPlayer";
+import ArchivalVideoPlayer from "@/components/media/ArchivalVideoPlayer";
 
 interface ItemModalProps {
   item: ArchiveItem | null;
@@ -182,6 +185,66 @@ export default function ItemModal({ item, onClose }: ItemModalProps) {
               </div>
             )}
           </div>
+
+          {/* Interactive Audio Player if item is audio */}
+          {item.mediaType === "audio" && (
+            <ArchivalAudioPlayer
+              audio={{
+                id: item.id,
+                title: item.title,
+                audioUrl: item.fileUrl || "/audio/speech.mp3",
+                speaker: item.author,
+                date: item.date,
+                sourceInstitution: item.sourceInstitution,
+                provenance: item.provenance,
+                transcript: item.transcript || item.summary,
+                license: item.rights,
+                confidence: "verified",
+              }}
+              compact
+            />
+          )}
+
+          {/* Interactive Video Player if item is video */}
+          {item.mediaType === "video" && (
+            <ArchivalVideoPlayer
+              video={{
+                id: item.id,
+                title: item.title,
+                videoUrl: item.fileUrl || "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+                posterUrl: item.thumbnailUrl,
+                date: item.date,
+                sourceInstitution: item.sourceInstitution,
+                provenance: item.provenance,
+                description: item.summary,
+                transcript: item.transcript,
+                license: item.rights,
+                confidence: "verified",
+              }}
+            />
+          )}
+
+          {/* PDF Volume Quick Access Bar */}
+          {item.fileUrl && item.fileUrl.endsWith(".pdf") && (
+            <div className="p-3.5 rounded bg-blue-500/10 border border-blue-500/30 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                <div>
+                  <p className="text-xs font-bold text-[var(--foreground)]">Complete Scanned Archival Volume</p>
+                  <p className="text-[11px] text-[var(--muted-foreground)]">Official edition with verified citations</p>
+                </div>
+              </div>
+              <a
+                href={item.fileUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3 py-1.5 rounded text-xs font-mono font-bold bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-90 flex items-center gap-1 transition-opacity"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Open PDF</span>
+              </a>
+            </div>
+          )}
 
           {/* Summary */}
           <div>

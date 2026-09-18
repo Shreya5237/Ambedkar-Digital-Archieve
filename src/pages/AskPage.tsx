@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Send, FileText, AlertCircle, CheckCircle, MessageSquare, Info, Sparkles, PlusCircle, Sprout } from "lucide-react";
+import { Send, FileText, AlertCircle, CheckCircle, MessageSquare, Info, Sparkles, PlusCircle, Sprout, Clock } from "lucide-react";
 import { askArchive } from "@/services/api";
 import type { ChatMessage } from "@/types/archive";
 import SidePanel from "@/components/ask/SidePanel";
@@ -13,32 +13,42 @@ const EXAMPLE_QUESTIONS = [
   "Why did Ambedkar convert to Buddhism?",
 ];
 
-const CONFIDENCE_META = {
+const CONFIDENCE_META: Record<
+  string,
+  { label: string; icon: any; color: string; bg: string }
+> = {
+  verified: {
+    label: "Verified Primary Archival Record",
+    icon: CheckCircle,
+    color: "text-emerald-700 dark:text-emerald-400 font-bold",
+    bg: "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-300 dark:border-emerald-800",
+  },
   high: {
-    label: "High archival confidence",
+    label: "High Archival Confidence",
     icon: CheckCircle,
     color: "text-green-600 dark:text-green-400",
     bg: "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800",
   },
   medium: {
-    label: "Medium archival confidence",
+    label: "Medium Archival Confidence",
     icon: Info,
     color: "text-amber-600 dark:text-amber-400",
     bg: "bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800",
   },
   low: {
-    label: "Low archival confidence",
+    label: "Low Archival Confidence",
     icon: AlertCircle,
     color: "text-orange-600 dark:text-orange-400",
     bg: "bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800",
   },
   insufficient: {
-    label: "Insufficient archival evidence",
+    label: "Insufficient Archival Evidence",
     icon: AlertCircle,
     color: "text-red-600 dark:text-red-400",
     bg: "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800",
   },
 };
+
 
 export default function AskPage() {
   const { t } = useTranslation();
@@ -170,58 +180,107 @@ export default function AskPage() {
                   <p className="text-sm leading-relaxed">{msg.content}</p>
                 </div>
               ) : (
-                <div className="max-w-[90%] space-y-3">
+                <div className="max-w-[80%] space-y-3">
+                  {/* Extracted Entities Tag Bar */}
+                  {msg.extractedEntities && (
+                    <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-mono text-[var(--muted-foreground)] bg-[var(--muted)]/40 p-2 rounded border border-[var(--border)]">
+                      <span className="text-[var(--primary)] font-bold">Extracted Intent:</span>
+                      {msg.extractedEntities.events?.map((ev) => (
+                        <span key={ev} className="px-1.5 py-0.5 rounded bg-[var(--card)] border border-[var(--border)]">
+                          Event: {ev}
+                        </span>
+                      ))}
+                      {msg.extractedEntities.people?.map((p) => (
+                        <span key={p} className="px-1.5 py-0.5 rounded bg-[var(--card)] border border-[var(--border)]">
+                          Figure: {p}
+                        </span>
+                      ))}
+                      {msg.extractedEntities.topics?.map((top) => (
+                        <span key={top} className="px-1.5 py-0.5 rounded bg-[var(--card)] border border-[var(--border)]">
+                          Topic: {top}
+                        </span>
+                      ))}
+                      {msg.extractedEntities.locations?.map((loc) => (
+                        <span key={loc} className="px-1.5 py-0.5 rounded bg-[var(--card)] border border-[var(--border)]">
+                          Place: {loc}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Archival Time Warning Banner */}
+                  {msg.timeWarning && (
+                    <div className="p-3 rounded border border-amber-500/30 bg-amber-500/10 text-xs font-mono text-amber-800 dark:text-amber-300 flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                      <span>{msg.timeWarning}</span>
+                    </div>
+                  )}
+
                   {/* Confidence badge */}
                   {msg.confidence && (
                     <div
                       className={`inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-sm border ${
-                        CONFIDENCE_META[msg.confidence].bg
+                        CONFIDENCE_META[msg.confidence]?.bg ?? CONFIDENCE_META.medium.bg
                       }`}
                     >
                       {(() => {
-                        const Icon = CONFIDENCE_META[msg.confidence].icon;
-                        return <Icon className={`w-3.5 h-3.5 ${CONFIDENCE_META[msg.confidence].color}`} />;
+                        const Icon = CONFIDENCE_META[msg.confidence]?.icon ?? Info;
+                        return <Icon className={`w-3.5 h-3.5 ${CONFIDENCE_META[msg.confidence]?.color ?? "text-amber-500"}`} />;
                       })()}
-                      <span className={CONFIDENCE_META[msg.confidence].color}>
-                        {CONFIDENCE_META[msg.confidence].label}
+                      <span className={CONFIDENCE_META[msg.confidence]?.color ?? "text-amber-500"}>
+                        {CONFIDENCE_META[msg.confidence]?.label ?? "Archival Confidence"}
                       </span>
                     </div>
                   )}
 
                   {/* Answer */}
                   <div className="border border-[var(--border)] rounded-sm p-4 bg-[var(--card)]">
-                    <p className="text-sm leading-relaxed text-[var(--foreground)]">{msg.content}</p>
+                    <p className="text-sm leading-relaxed text-[var(--foreground)] whitespace-pre-line">{msg.content}</p>
                   </div>
 
                   {/* Sources */}
                   {msg.sources && msg.sources.length > 0 && (
                     <div className="space-y-2">
-                      <p className="text-[10px] font-mono uppercase tracking-widest text-[var(--muted-foreground)]">
-                        Archival sources
+                      <p className="text-[10px] font-mono uppercase tracking-widest text-[var(--muted-foreground)] flex items-center gap-1">
+                        <FileText className="w-3 h-3 text-[var(--primary)]" />
+                        Archival Sources (Prioritized Institutional Hierarchy)
                       </p>
                       {msg.sources.map((src, i) => (
                         <div
                           key={i}
-                          className="border border-[var(--border)] rounded-sm p-3 bg-[var(--muted)]"
+                          className="border border-[var(--border)] rounded-sm p-3 bg-[var(--muted)] space-y-1"
                         >
-                          <div className="flex items-start gap-2">
-                            <FileText className="w-3.5 h-3.5 text-[var(--primary)] flex-shrink-0 mt-0.5" />
-                            <div className="flex-1 min-w-0">
-                              <Link
-                                to={`/documents/${src.documentId}`}
-                                className="text-xs font-medium text-[var(--primary)] hover:underline"
-                              >
-                                {src.title}
-                              </Link>
-                              {src.page && (
-                                <span className="text-[10px] font-mono text-[var(--muted-foreground)] ml-2">
-                                  p. {src.page}
-                                </span>
-                              )}
-                              <blockquote className="mt-1.5 text-xs text-[var(--muted-foreground)] italic border-l border-[var(--primary)]/40 pl-2 leading-relaxed">
-                                "{src.excerpt}"
-                              </blockquote>
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-start gap-2">
+                              <FileText className="w-3.5 h-3.5 text-[var(--primary)] flex-shrink-0 mt-0.5" />
+                              <div className="flex-1 min-w-0">
+                                {src.documentId ? (
+                                  <Link
+                                    to={`/documents/${src.documentId}`}
+                                    className="text-xs font-semibold text-[var(--primary)] hover:underline"
+                                  >
+                                    {src.title}
+                                  </Link>
+                                ) : (
+                                  <span className="text-xs font-semibold text-[var(--foreground)]">
+                                    {src.title}
+                                  </span>
+                                )}
+                                {src.page && (
+                                  <span className="text-[10px] font-mono text-[var(--muted-foreground)] ml-2">
+                                    ({src.page})
+                                  </span>
+                                )}
+                                <blockquote className="mt-1 text-xs text-[var(--muted-foreground)] italic border-l border-[var(--primary)]/40 pl-2 leading-relaxed">
+                                  "{src.excerpt}"
+                                </blockquote>
+                              </div>
                             </div>
+                            {src.priority && (
+                              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[var(--primary)]/10 text-[var(--primary)] font-bold whitespace-nowrap">
+                                Priority #{src.priority}
+                              </span>
+                            )}
                           </div>
                         </div>
                       ))}

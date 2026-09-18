@@ -13,8 +13,9 @@ import { useInstitution } from "@/context/InstitutionContext";
 import NewContentIngestion from "@/components/institution/NewContentIngestion";
 import UploadHistory from "@/components/institution/UploadHistory";
 import InstitutionArchive from "@/components/institution/InstitutionArchive";
+import HistoricalCurationTab from "@/components/institution/HistoricalCurationTab";
 
-export type InstitutionTab = "new-content" | "history" | "archive";
+export type InstitutionTab = "new-content" | "history" | "archive" | "curation";
 
 export default function InstitutionPortal() {
   const { user, isAuthenticated } = useAuth();
@@ -41,7 +42,7 @@ export default function InstitutionPortal() {
                   </span>
                 </div>
                 <p className="text-xs text-[var(--muted-foreground)] mt-0.5">
-                  Multi-Format Content Upload • Unified Attribute Extraction • Vector Database Indexing
+                  Multi-Format Content Upload • Unified Attribute Extraction • Historical Curation & Provenance
                 </p>
               </div>
             </div>
@@ -61,8 +62,8 @@ export default function InstitutionPortal() {
           </div>
         </div>
 
-        {/* 3 Main Portal Section Tabs */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 bg-[var(--card)] p-1.5 rounded-md border border-[var(--border)] shadow-xs">
+        {/* 4 Main Portal Section Tabs */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-[var(--card)] p-1.5 rounded-md border border-[var(--border)] shadow-xs">
           <button
             type="button"
             onClick={() => setActiveTab("new-content")}
@@ -106,6 +107,19 @@ export default function InstitutionPortal() {
             <Archive className="w-4 h-4" />
             <span>3. ARCHIVE ({files.length})</span>
           </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("curation")}
+            className={`py-3 px-4 rounded text-xs font-mono font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer ${
+              activeTab === "curation"
+                ? "bg-[var(--primary)] text-[var(--primary-foreground)] shadow-sm"
+                : "text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)]/50"
+            }`}
+          >
+            <ShieldCheck className="w-4 h-4" />
+            <span>4. CURATION</span>
+          </button>
         </div>
 
         {/* Tab Views */}
@@ -122,6 +136,8 @@ export default function InstitutionPortal() {
           )}
 
           {activeTab === "archive" && <InstitutionArchive />}
+
+          {activeTab === "curation" && <HistoricalCurationTab />}
         </div>
       </div>
     </div>
