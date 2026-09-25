@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -19,11 +19,16 @@ import {
   Film,
   Download,
   HelpCircle,
+  List,
+  File,
 } from "lucide-react";
 import { getDocument } from "@/services/api";
 import ArchivalAudioPlayer from "@/components/media/ArchivalAudioPlayer";
 import ArchivalVideoPlayer from "@/components/media/ArchivalVideoPlayer";
 import VolumeCitationCard from "@/components/media/VolumeCitationCard";
+import TranscriptAudioPlayer from "@/components/media/TranscriptAudioPlayer";
+import PageNavigator from "@/components/common/PageNavigator";
+import { parseTranscriptPages } from "@/utils/transcriptParser";
 
 export default function DocumentPage() {
   const { id } = useParams<{ id: string }>();
@@ -33,12 +38,33 @@ export default function DocumentPage() {
   const [zoom, setZoom] = useState(100);
   const [copied, setCopied] = useState(false);
   const [docSearch, setDocSearch] = useState("");
+  const [transcriptViewMode, setTranscriptViewMode] = useState<"single" | "full">("single");
 
   const { data: doc, isLoading } = useQuery({
     queryKey: ["document", id],
     queryFn: () => getDocument(id!),
     enabled: !!id,
   });
+
+  const currentLang = i18n.language.split('-')[0]; // e.g. 'en-US' -> 'en'
+  const displayTranscript = doc?.translatedTranscripts && doc.translatedTranscripts[currentLang]
+    ? doc.translatedTranscripts[currentLang]
+    : doc?.transcript;
+
+  const parsedPages = useMemo(() => {
+    if (doc?.pagesList && doc.pagesList.length > 0) {
+      return doc.pagesList;
+    }
+    return parseTranscriptPages(displayTranscript, doc?.pageCount);
+  }, [doc, displayTranscript]);
+
+  const totalPages = Math.max(doc?.pageCount || 1, parsedPages.length || 1);
+
+  const currentPageObj = useMemo(() => {
+    return parsedPages.find((p) => p.pageNumber === page) || parsedPages[page - 1] || parsedPages[0];
+  }, [parsedPages, page]);
+
+  const currentPageContent = currentPageObj?.content || (parsedPages.length === 1 ? (displayTranscript || "") : "");
 
   const handleCopyCitation = () => {
     if (!doc) return;
@@ -78,11 +104,6 @@ export default function DocumentPage() {
     const re = new RegExp(`(${docSearch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi");
     return text.replace(re, `<mark class="bg-amber-200 dark:bg-amber-700 rounded-sm px-0.5">$1</mark>`);
   };
-
-  const currentLang = i18n.language.split('-')[0]; // e.g. 'en-US' -> 'en'
-  const displayTranscript = doc.translatedTranscripts && doc.translatedTranscripts[currentLang]
-    ? doc.translatedTranscripts[currentLang]
-    : doc.transcript;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -163,39 +184,17 @@ export default function DocumentPage() {
         <div className="lg:col-span-3">
           {/* Controls */}
           <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              {doc.pageCount && doc.pageCount > 1 && (
-                <>
-                  <button
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    disabled={page === 1}
-                    className="p-1.5 rounded-sm border border-[var(--border)] hover:bg-[var(--muted)] transition-colors disabled:opacity-40"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-                  <span className="text-sm font-mono text-[var(--muted-foreground)]">
-                    {t("document.page")} {page} {t("document.of")} {doc.pageCount}
-                  </span>
-                  <button
-                    onClick={() => setPage((p) => Math.min(doc.pageCount!, p + 1))}
-                    disabled={page === doc.pageCount}
-                    className="p-1.5 rounded-sm border border-[var(--border)] hover:bg-[var(--muted)] transition-colors disabled:opacity-40"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                </>
-              )}
-            </div>
+            <PageNavigator page={page} totalPages={totalPages} onPageChange={setPage} />
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setZoom((z) => Math.min(200, z + 25))}
-                className="p-1.5 rounded-sm border border-[var(--border)] hover:bg-[var(--muted)] transition-colors"
+                className="p-1.5 rounded-sm border border-[var(--border)] hover:bg-[var(--muted)] transition-colors cursor-pointer"
               >
                 <ZoomIn className="w-4 h-4" />
               </button>
               <button
                 onClick={() => setZoom((z) => Math.max(50, z - 25))}
-                className="p-1.5 rounded-sm border border-[var(--border)] hover:bg-[var(--muted)] transition-colors"
+                className="p-1.5 rounded-sm border border-[var(--border)] hover:bg-[var(--muted)] transition-colors cursor-pointer"
               >
                 <ZoomOut className="w-4 h-4" />
               </button>
@@ -334,25 +333,100 @@ export default function DocumentPage() {
 
           {/* Transcript tab */}
           {activeTab === "transcript" && (
-            <div className="max-h-[600px] overflow-y-auto">
-              {displayTranscript ? (
-                <div>
-                  {doc.translatedTranscripts && doc.translatedTranscripts[currentLang] && (
-                    <div className="mb-4 text-xs font-medium text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-3 py-2 rounded border border-green-200 dark:border-green-800 inline-block">
-                      ✓ Automatically translated to your language
-                    </div>
-                  )}
-                  <div
-                    className="text-sm leading-relaxed whitespace-pre-wrap text-[var(--foreground)]"
-                    dangerouslySetInnerHTML={{ __html: highlightText(displayTranscript) }}
-                  />
-                </div>
-              ) : (
-                <div className="text-center py-12 text-[var(--muted-foreground)]">
-                  <BookOpen className="w-8 h-8 mx-auto mb-3 opacity-40" />
-                  <p className="text-sm">Transcript not yet available for this document</p>
-                </div>
-              )}
+            <div className="space-y-4">
+              {/* Audiobook TTS Reader */}
+              <TranscriptAudioPlayer
+                text={
+                  transcriptViewMode === "single"
+                    ? currentPageContent || displayTranscript || ""
+                    : displayTranscript || ""
+                }
+                title={doc.title}
+                language={doc.language}
+                pageNumber={page}
+                totalPages={totalPages}
+                onNextPage={() => setPage((p) => Math.min(totalPages, p + 1))}
+                onPrevPage={() => setPage((p) => Math.max(1, p - 1))}
+                onPageSelect={(p) => setPage(p)}
+              />
+
+              {/* View Mode & Page Navigator Bar */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-lg border border-[var(--border)] bg-[var(--card)] shadow-xs">
+                <PageNavigator page={page} totalPages={totalPages} onPageChange={setPage} />
+
+                {totalPages > 1 && (
+                  <div className="flex items-center gap-1 bg-[var(--muted)] p-1 rounded-md border border-[var(--border)] text-xs font-mono">
+                    <button
+                      type="button"
+                      onClick={() => setTranscriptViewMode("single")}
+                      className={`px-2.5 py-1 rounded transition-colors cursor-pointer flex items-center gap-1 font-semibold ${
+                        transcriptViewMode === "single"
+                          ? "bg-[var(--primary)] text-[var(--primary-foreground)] shadow-xs"
+                          : "text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+                      }`}
+                    >
+                      <File className="w-3 h-3" />
+                      <span>Single Page</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTranscriptViewMode("full")}
+                      className={`px-2.5 py-1 rounded transition-colors cursor-pointer flex items-center gap-1 font-semibold ${
+                        transcriptViewMode === "full"
+                          ? "bg-[var(--primary)] text-[var(--primary-foreground)] shadow-xs"
+                          : "text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+                      }`}
+                    >
+                      <List className="w-3 h-3" />
+                      <span>Full Scroll</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Transcript Content Container */}
+              <div className="max-h-[550px] overflow-y-auto p-4 rounded-lg border border-[var(--border)] bg-[var(--background)] shadow-inner space-y-3">
+                {displayTranscript ? (
+                  <div>
+                    {doc.translatedTranscripts && doc.translatedTranscripts[currentLang] && (
+                      <div className="mb-4 text-xs font-medium text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-3 py-2 rounded border border-green-200 dark:border-green-800 inline-block">
+                        ✓ Automatically translated to your language
+                      </div>
+                    )}
+
+                    {transcriptViewMode === "single" && totalPages > 1 ? (
+                      <div>
+                        <div className="flex items-center justify-between pb-2 mb-3 border-b border-[var(--border)] font-mono text-xs text-[var(--primary)] font-bold">
+                          <span>PAGE {page} TRANSCRIPT</span>
+                          <span className="text-[var(--muted-foreground)] font-normal">
+                            Page {page} of {totalPages}
+                          </span>
+                        </div>
+                        {currentPageContent ? (
+                          <div
+                            className="text-sm leading-relaxed whitespace-pre-wrap text-[var(--foreground)] font-serif"
+                            dangerouslySetInnerHTML={{ __html: highlightText(currentPageContent) }}
+                          />
+                        ) : (
+                          <div className="py-8 text-center text-xs text-[var(--muted-foreground)] italic font-mono">
+                            [Blank or scanned image on Page {page}]
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div
+                        className="text-sm leading-relaxed whitespace-pre-wrap text-[var(--foreground)] font-serif"
+                        dangerouslySetInnerHTML={{ __html: highlightText(displayTranscript) }}
+                      />
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 text-[var(--muted-foreground)]">
+                    <BookOpen className="w-8 h-8 mx-auto mb-3 opacity-40" />
+                    <p className="text-sm">Transcript not yet available for this document</p>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 

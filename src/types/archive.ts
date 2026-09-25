@@ -14,7 +14,7 @@ export type Language = "en" | "hi" | "mr" | "ta";
 
 export type EntityType = "PERSON" | "DOCUMENT" | "EVENT" | "TOPIC" | "PLACE" | "PUBLICATION" | "SOURCE";
 
-export type ConfidenceLevel = "verified" | "high" | "medium" | "low" | "insufficient";
+export type ConfidenceLevel = "verified" | "high" | "medium" | "low" | "insufficient" | "probable";
 
 export type DatePrecision = "day" | "month" | "year" | "approximate";
 
@@ -265,6 +265,7 @@ export interface ArchiveItem {
   decade?: number;
   hasAudioDescription?: boolean;
   hasCaptions?: boolean;
+  pagesList?: { pageNumber: number; content: string }[];
   translatedTranscripts?: Record<string, string>;
   sources?: Source[];
   evidence?: Evidence[];
@@ -382,6 +383,84 @@ export interface TimelineEntry {
   trajectory?: HistoricalTrajectory;
 }
 
+export type AskMode = "standard" | "research";
+
+export interface AcademicCitationSet {
+  apa: string;
+  chicago: string;
+  mla: string;
+  bibtex: string;
+}
+
+export interface VerbatimQuote {
+  quote: string;
+  speaker: string;
+  source: string;
+  folioOrPage?: string;
+  year?: string;
+  institutionalPriority?: number;
+}
+
+export interface CorroborationMatrixItem {
+  sourceTitle: string;
+  repository: string;
+  tier: string;
+  priority: number;
+  consensusStatus:
+    | "Independently Corroborated"
+    | "Primary Official Record"
+    | "Corroborated by Legislative Record"
+    | "Secondary Historical Support";
+}
+
+export interface ResearchSynthesisData {
+  executiveAbstract: string;
+  historiographicalContext: string;
+  verbatimQuotes: VerbatimQuote[];
+  corroborationMatrix: CorroborationMatrixItem[];
+  archivalLimitations: string;
+  recommendedPrimaryReadings: Array<{
+    title: string;
+    documentId?: string;
+    volume?: string;
+    relevance: string;
+  }>;
+  academicCitations: AcademicCitationSet;
+  appliedParameters?: ResearchParameters;
+}
+
+export interface ResearchParameters {
+  era?: string;
+  strictPrimaryOnly?: boolean;
+  synthesisFormat?: "synthesis" | "matrix" | "bibliography";
+  bawsVolumeFilter?: string;
+}
+
+export interface ResearchDossierItem {
+  id: string;
+  sessionId: string;
+  type: "quote" | "citation" | "note" | "claim";
+  title: string;
+  content: string;
+  sourceTitle?: string;
+  authorOrSpeaker?: string;
+  reference?: string;
+  addedAt: string;
+  tags?: string[];
+}
+
+export interface ChatSession {
+  id: string;
+  title: string;
+  mode: AskMode;
+  createdAt: string;
+  updatedAt: string;
+  messages: ChatMessage[];
+  tags?: string[];
+  researchNotes?: ResearchDossierItem[];
+  researchParameters?: ResearchParameters;
+}
+
 export interface ChatMessage {
   id: string;
   role: "user" | "assistant";
@@ -397,6 +476,8 @@ export interface ChatMessage {
     locations?: string[];
   };
   timeWarning?: string;
+  mode?: AskMode;
+  researchData?: ResearchSynthesisData;
 }
 
 export interface SourceCitation {
@@ -410,3 +491,4 @@ export interface SourceCitation {
   priority?: SourcePriority;
   confidence?: ConfidenceLevel;
 }
+

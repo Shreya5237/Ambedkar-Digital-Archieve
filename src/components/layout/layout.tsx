@@ -52,6 +52,8 @@ export default function Layout() {
   const isActive = (to: string) =>
     to === "/" ? location.pathname === "/" : location.pathname.startsWith(to);
 
+  const isAskPage = location.pathname.startsWith("/ask");
+
   return (
     <div className="min-h-screen flex flex-col bg-[var(--background)] text-[var(--foreground)]">
       {/* Header */}
@@ -292,62 +294,65 @@ export default function Layout() {
       </header>
 
       {/* Main content */}
-      <main className="flex-1">
+      <main className={`flex-1 ${isAskPage ? "flex flex-col overflow-hidden" : ""}`}>
         <Outlet />
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-[var(--border)] mt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-6 h-6 rounded-sm bg-[var(--primary)] flex items-center justify-center">
-                  <Archive className="w-3.5 h-3.5 text-[var(--primary-foreground)]" />
+      {/* Footer (hidden on /ask workspace) */}
+      {!isAskPage && (
+        <footer className="border-t border-[var(--border)] mt-16">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-6 h-6 rounded-sm bg-[var(--primary)] flex items-center justify-center">
+                    <Archive className="w-3.5 h-3.5 text-[var(--primary-foreground)]" />
+                  </div>
+                  <span className="font-display font-semibold text-sm">Ambedkar Digital Heritage Archive</span>
                 </div>
-                <span className="font-display font-semibold text-sm">Ambedkar Digital Heritage Archive</span>
+                <p className="text-xs text-[var(--muted-foreground)] leading-relaxed">
+                  A digital preservation and research platform dedicated to the life, work, and legacy of Dr. B. R. Ambedkar
+                  (1891–1956).
+                </p>
               </div>
-              <p className="text-xs text-[var(--muted-foreground)] leading-relaxed">
-                A digital preservation and research platform dedicated to the life, work, and legacy of Dr. B. R. Ambedkar
-                (1891–1956).
-              </p>
-            </div>
-            <div>
-              <h4 className="text-xs font-mono uppercase tracking-widest text-[var(--muted-foreground)] mb-3">
-                Explore
-              </h4>
-              <div className="flex flex-col gap-1.5">
-                {NAV_LINKS.map(({ key, to }) => (
-                  <Link key={key} to={to} className="text-sm text-[var(--muted-foreground)] hover:text-[var(--primary)] transition-colors">
-                    {t(`nav.${key}`)}
+              <div>
+                <h4 className="text-xs font-mono uppercase tracking-widest text-[var(--muted-foreground)] mb-3">
+                  Explore
+                </h4>
+                <div className="flex flex-col gap-1.5">
+                  {NAV_LINKS.map(({ key, to }) => (
+                    <Link key={key} to={to} className="text-sm text-[var(--muted-foreground)] hover:text-[var(--primary)] transition-colors">
+                      {t(`nav.${key}`)}
+                    </Link>
+                  ))}
+                  <Link to="/login" className="text-sm text-[var(--muted-foreground)] hover:text-[var(--primary)] transition-colors">
+                    Portal Login
                   </Link>
-                ))}
-                <Link to="/login" className="text-sm text-[var(--muted-foreground)] hover:text-[var(--primary)] transition-colors">
-                  Portal Login
-                </Link>
+                </div>
+              </div>
+              <div>
+                <h4 className="text-xs font-mono uppercase tracking-widest text-[var(--muted-foreground)] mb-3">
+                  About
+                </h4>
+                <p className="text-xs text-[var(--muted-foreground)] leading-relaxed">
+                  All archival materials are sourced from recognised institutions. Rights and provenance are documented for each
+                  item. This platform is for research and educational use.
+                </p>
               </div>
             </div>
-            <div>
-              <h4 className="text-xs font-mono uppercase tracking-widest text-[var(--muted-foreground)] mb-3">
-                About
-              </h4>
-              <p className="text-xs text-[var(--muted-foreground)] leading-relaxed">
-                All archival materials are sourced from recognised institutions. Rights and provenance are documented for each
-                item. This platform is for research and educational use.
-              </p>
+            <div className="rule mt-8 pt-6 flex items-center justify-between">
+              <span className="text-xs text-[var(--muted-foreground)] font-mono">
+                © 2024 Ambedkar Digital Heritage Archive
+              </span>
+              <span className="text-xs text-[var(--muted-foreground)]">
+                Jai Bhim
+              </span>
             </div>
           </div>
-          <div className="rule mt-8 pt-6 flex items-center justify-between">
-            <span className="text-xs text-[var(--muted-foreground)] font-mono">
-              © 2024 Ambedkar Digital Heritage Archive
-            </span>
-            <span className="text-xs text-[var(--muted-foreground)]">
-              Jai Bhim
-            </span>
-          </div>
-        </div>
-      </footer>
+        </footer>
+      )}
     </div>
   );
 }
+
 

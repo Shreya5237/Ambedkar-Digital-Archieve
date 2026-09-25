@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import type { FileType, ArchiveFile } from "@/types/institution";
 import { useInstitution } from "@/context/InstitutionContext";
+import TranscriptAudioPlayer from "@/components/media/TranscriptAudioPlayer";
 
 const FORMAT_ICONS: Record<FileType, React.ReactNode> = {
   PDF: <FileText className="w-5 h-5 text-red-500" />,
@@ -224,12 +225,19 @@ export default function InstitutionArchive() {
               </div>
             </div>
 
-            {/* Extracted Content */}
-            <div className="space-y-2">
+            {/* Extracted Content & Audiobook Player */}
+            <div className="space-y-3">
               <h4 className="font-display font-semibold text-sm flex items-center gap-2">
                 <FileText className="w-4 h-4 text-[var(--primary)]" />
-                <span>Extracted Content & Transcript</span>
+                <span>Extracted Content & Audio Transcript</span>
               </h4>
+              <TranscriptAudioPlayer
+                text={selectedFile.extractedContent.text}
+                title={selectedFile.extractedContent.title}
+                language={selectedFile.languages[0] || "en"}
+                pageNumber={1}
+                totalPages={1}
+              />
               <div className="p-4 rounded bg-[var(--background)] border border-[var(--border)] text-xs leading-relaxed space-y-3 font-mono">
                 <p>"{selectedFile.extractedContent.text}"</p>
                 {selectedFile.extractedContent.visualInfo && (

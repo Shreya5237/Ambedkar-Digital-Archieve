@@ -24,6 +24,7 @@ import type {
   Location,
 } from "@/types/archive";
 import { executeGroundedRAG } from "./ragService";
+import { executeResearchRAG } from "./researchService";
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -69,14 +70,56 @@ export async function getFeaturedDocuments(): Promise<ArchiveItem[]> {
   return documents.slice(0, 6);
 }
 
+const englishOcrModules = import.meta.glob("../../data/English_doc/ocr_output/*.json");
+const hindiOcrModules = import.meta.glob("../../data/hindi_doc/ocr_output/*.json");
+
 export async function getDocument(id: string): Promise<ArchiveItem | undefined> {
   await delay(200);
-  return documents.find((d) => d.id === id);
+  const doc = documents.find((d) => d.id === id);
+  if (!doc) return undefined;
+
+  const docCopy = { ...doc };
+  try {
+    if (id.startsWith("VolumeH")) {
+      const fileName = id.replace(".pdf", ".json");
+      const loader = hindiOcrModules[`../../data/hindi_doc/ocr_output/${fileName}`];
+      if (loader) {
+        const ocrData: any = await loader();
+        const pages = ocrData?.default?.pages || (Array.isArray(ocrData?.default) ? ocrData.default : []);
+        if (pages && pages.length > 0) {
+          docCopy.pageCount = pages.length;
+          docCopy.pagesList = pages.map((p: any) => ({
+            pageNumber: p.page,
+            content: p.content || "",
+          }));
+          docCopy.transcript = pages.map((p: any) => `[Page ${p.page}]\n${p.content}`).join("\n\n---\n\n");
+        }
+      }
+    } else if (id.startsWith("Volume")) {
+      const fileName = id.replace(".pdf", ".json");
+      const loader = englishOcrModules[`../../data/English_doc/ocr_output/${fileName}`];
+      if (loader) {
+        const ocrData: any = await loader();
+        const pages = ocrData?.default?.pages || (Array.isArray(ocrData?.default) ? ocrData.default : []);
+        if (pages && pages.length > 0) {
+          docCopy.pageCount = pages.length;
+          docCopy.pagesList = pages.map((p: any) => ({
+            pageNumber: p.page,
+            content: p.content || "",
+          }));
+          docCopy.transcript = pages.map((p: any) => `[Page ${p.page}]\n${p.content}`).join("\n\n---\n\n");
+        }
+      }
+    }
+  } catch (e) {
+    console.warn("OCR Transcript not found or error loading for", id, e);
+  }
+
+  return docCopy;
 }
 
 export async function getItemById(id: string): Promise<ArchiveItem | undefined> {
-  await delay(150);
-  return documents.find((d) => d.id === id);
+  return getDocument(id);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -288,10 +331,20 @@ export async function searchArchive(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Ask / Chat  –  Grounded RAG Pipeline
+// Ask / Chat  –  Grounded RAG Pipeline & Scholarly Research Pipeline
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function askArchive(query: string): Promise<ChatMessage> {
   await delay(600);
   return executeGroundedRAG(query);
 }
+
+export async function askArchiveResearch(
+  query: string,
+  params?: import("@/types/archive").ResearchParameters
+): Promise<ChatMessage> {
+  await delay(800);
+  return executeResearchRAG(query, params);
+}
+
+
